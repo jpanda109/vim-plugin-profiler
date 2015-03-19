@@ -1,0 +1,26 @@
+Jason Xiong: xiongjj
+Matt Lee: leeml2
+
+Project Description:
+Vim plugin to moniter various system resources used by vim plugins in order
+to effectively debug or determine the root of slowdowns, etc.
+
+Error Conditions:
+when it doesn't work (???)
+
+Milestones:
+Multi threaded support for non-blocking actions in vim
+Message queue to pass information about CPU,etc utilization to proper
+    data analysis processes
+An analysis of proc files to gather the proper resource information
+
+Expected Schedule/Timeline
+Done by April 21
+
+Language and operating system:
+Python/VimL on Unix systems (our machines being Ubuntu 14.04 and OSX Yosemite)
+
+Questions:
+How low-level should we be working in? e.g. in the case of a message queue,
+would we be implementing the actual message queue system or could we use
+things like RabbitMQ or Celery?

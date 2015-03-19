@@ -24,3 +24,11 @@ Questions:
 How low-level should we be working in? e.g. in the case of a message queue,
 would we be implementing the actual message queue system or could we use
 things like RabbitMQ or Celery?
+
+IP Mechanisms:
+
+https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue
+https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe
+http://semanchuk.com/philip/posix_ipc/
+
+

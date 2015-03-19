@@ -4,6 +4,10 @@ Matt Lee: leeml2
 Project Description:
 Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
+A main process will handle sending out workers to collect data from the various
+processes spawned by the vim plugins, and sending them through a message queue
+so that another process can then analyze and output the data, possibly using
+some sort of graph utility such as gnuplot
 
 Error Conditions:
 when it doesn't work (???)

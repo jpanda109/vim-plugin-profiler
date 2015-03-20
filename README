@@ -35,4 +35,6 @@ https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue
 https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe
 http://semanchuk.com/philip/posix_ipc/
 
-
+tangential ideas:
+using --startuptime if :profile doesn't pan out
+run vim within an instance of python to do realtime processing

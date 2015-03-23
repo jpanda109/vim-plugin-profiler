@@ -9,6 +9,7 @@ to effectively debug or determine the root of slowdowns, etc.
 JK might not be feasible as a realtime debugger, but we can still make
 a nifty usage statistics program along with some added profiling at the end
 ---  this was a "beta" architecture, keeping for now but will delete later
+
 A main process will handle sending out workers to collect data from the various
 processes spawned by the vim plugins, and sending them through a message queue
 so that another process can then analyze and output the data, possibly using
@@ -34,6 +35,8 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
+
+
 //=================================================
 Error Conditions:
 //=================================================
@@ -44,23 +47,27 @@ Don't really know what to say here
 Milestones:
 //=================================================
 
-1. Profiling memory/cpu usage of various scripts (from proc file)
+1. get program to spawn child process that runs vim
 
-2. Reporting back in live time by taking input from child threads
-    - or perhaps using message queue? to pass information about cpu,
+2. Get child process to report back to parent program
+    a. Intercept commands sent by vim/youcompleteme
+    b. Pair commands with spikes in CPU/MEM usage
+        -ps grep
+    c. report back (using message queue)
 
-3. Hopefully get it to graph life
+3. Display in Parent process
 
-///////// jasons previous notes:
-Multi threaded support for non-blocking actions in vim
-Message queue to pass information about CPU,etc utilization to proper
-    data analysis processes
-An analysis of proc files to gather the proper resource information
-/////////
 
 //=================================================
 Expected Schedule/Timeline
 //=================================================
+Milestone # :: Date
+________________________
+1     :: March 28
+2a    :: April 4
+2b/c  :: April 11
+3     :: April 17
+
 Done by April 21
 
 //=================================================

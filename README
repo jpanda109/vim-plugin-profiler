@@ -1,7 +1,9 @@
 Jason Xiong: xiongjj
 Matt Lee: leeml2
 
+//=================================================
 Project Description:
+//=================================================
 Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
 JK might not be feasible as a realtime debugger, but we can still make
@@ -32,11 +34,15 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
+//=================================================
 Error Conditions:
+//=================================================
 Possible race conditions between threads
 Don't really know what to say here
 
+//=================================================
 Milestones:
+//=================================================
 
 1. Profiling memory/cpu usage of various scripts (from proc file)
 
@@ -52,18 +58,26 @@ Message queue to pass information about CPU,etc utilization to proper
 An analysis of proc files to gather the proper resource information
 /////////
 
+//=================================================
 Expected Schedule/Timeline
+//=================================================
 Done by April 21
 
+//=================================================
 Language and operating system:
+//=================================================
 Python/VimL on Unix systems (our machines being Ubuntu 14.04 and OSX Yosemite)
 
+//=================================================
 Questions:
+//=================================================
 How low-level should we be working in? e.g. in the case of a message queue,
 would we be implementing the actual message queue system or could we use
 things like RabbitMQ or Celery?
 
+//=================================================
 IP Mechanisms:
+//=================================================
 
 https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue
 https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe

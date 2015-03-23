@@ -1,12 +1,15 @@
 Jason Xiong: xiongjj
 Matt Lee: leeml2
 
+//=================================================
 Project Description:
+//=================================================
 Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
 JK might not be feasible as a realtime debugger, but we can still make
 a nifty usage statistics program along with some added profiling at the end
 ---  this was a "beta" architecture, keeping for now but will delete later
+
 A main process will handle sending out workers to collect data from the various
 processes spawned by the vim plugins, and sending them through a message queue
 so that another process can then analyze and output the data, possibly using
@@ -32,28 +35,56 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
+
+
+//=================================================
 Error Conditions:
+//=================================================
 Possible race conditions between threads
 Don't really know what to say here
 
+//=================================================
 Milestones:
-Multi threaded support for non-blocking actions in vim
-Message queue to pass information about CPU,etc utilization to proper
-    data analysis processes
-An analysis of proc files to gather the proper resource information
+//=================================================
 
+1. get program to spawn child process that runs vim
+
+2. Get child process to report back to parent program
+    a. Intercept commands sent by vim/youcompleteme
+    b. Pair commands with spikes in CPU/MEM usage
+        -ps grep
+    c. report back (using message queue)
+
+3. Display in Parent process
+
+
+//=================================================
 Expected Schedule/Timeline
+//=================================================
+Milestone # :: Date
+________________________
+1     :: March 28
+2a    :: April 4
+2b/c  :: April 11
+3     :: April 17
+
 Done by April 21
 
+//=================================================
 Language and operating system:
+//=================================================
 Python/VimL on Unix systems (our machines being Ubuntu 14.04 and OSX Yosemite)
 
+//=================================================
 Questions:
+//=================================================
 How low-level should we be working in? e.g. in the case of a message queue,
 would we be implementing the actual message queue system or could we use
 things like RabbitMQ or Celery?
 
+//=================================================
 IP Mechanisms:
+//=================================================
 
 https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue
 https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe

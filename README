@@ -4,9 +4,37 @@ Matt Lee: leeml2
 Project Description:
 Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
+JK might not be feasible as a realtime debugger, but we can still make
+a nifty usage statistics program along with some added profiling at the end
+---  this was a "beta" architecture, keeping for now but will delete later
+A main process will handle sending out workers to collect data from the various
+processes spawned by the vim plugins, and sending them through a message queue
+so that another process can then analyze and output the data, possibly using
+some sort of graph utility such as gnuplot
+---
+Real Architecture:
+Run vim within a sandbox (much like valgrind) in order to load in the proper
+    scripts and functions. The main process will first use a seperate thread to
+    gather --startup information and display it somewhere (possibly within
+    another buffer), along with running :profile in vim in order to collect
+    data for future use (program should display usage statistics of different
+    plugin functions along with their call times) .
+    It will then create another process to display data taken
+    from the main process (such as function calls), along with its own thread
+    to get information from the os itself (CPU/RAM usage of vim [side note
+    i think only YCM has seperate python process due to their client-server
+    architecture]). The main process will load up vim and use it as normal,
+    but intercepting VimL function calls to call a python function (possibly
+    through a new thread each time? seems cumbersome) to send data about that
+    function to a message queue, which is the analyzed and displayed by the
+    aforementioned seperate process. By the way the other process will use
+    a seperate thread to handle user input in order to ensure user input goes
+    through even when intense (super intense) calculations are being done.
+
 
 Error Conditions:
-when it doesn't work (???)
+Possible race conditions between threads
+Don't really know what to say here
 
 Milestones:
 
@@ -34,3 +62,9 @@ Questions:
 How low-level should we be working in? e.g. in the case of a message queue,
 would we be implementing the actual message queue system or could we use
 things like RabbitMQ or Celery?
+
+IP Mechanisms:
+
+https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue
+https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe
+http://semanchuk.com/philip/posix_ipc/

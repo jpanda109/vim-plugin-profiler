@@ -38,3 +38,5 @@ http://semanchuk.com/philip/posix_ipc/
 tangential ideas:
 using --startuptime if :profile doesn't pan out
 run vim within an instance of python to do realtime processing
+use autocmd to intercept commands
+analyize profile afterwards

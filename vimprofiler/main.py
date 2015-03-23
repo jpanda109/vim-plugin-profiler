@@ -1,8 +1,6 @@
 import subprocess
 
 
-def run_main_process():
-    args = ['python3', 'src/mainprocess.py']
-    subprocess.call(args)
-
-run_main_process()
+args = ['gnome-terminal', '-x', 'sh', '-c',
+        'vim --startuptime vimprofile-startuptime.log -S plugin.vim; bash']
+subprocess.call(args)

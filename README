@@ -9,10 +9,20 @@ Error Conditions:
 when it doesn't work (???)
 
 Milestones:
+
+1. Profiling memory/cpu usage of various scripts (from proc file)
+
+2. Reporting back in live time by taking input from child threads
+    - or perhaps using message queue? to pass information about cpu,
+
+3. Hopefully get it to graph life
+
+///////// jasons previous notes:
 Multi threaded support for non-blocking actions in vim
 Message queue to pass information about CPU,etc utilization to proper
     data analysis processes
 An analysis of proc files to gather the proper resource information
+/////////
 
 Expected Schedule/Timeline
 Done by April 21

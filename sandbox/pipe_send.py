@@ -1,26 +1,17 @@
-import tempfile
 import os
 import time
+
 
 def write_to_pipe(pipe, text):
     os.write(pipe, text.encode('utf-8'))
 
-with tempfile.TemporaryDirectory() as tmpdir:
-    filename = os.path.join(tmpdir, 'tmpfifo')
-    with open('pipe_name', 'w') as pnfile:
-        pnfile.write(filename)
 
-    try:
-        os.mkfifo(filename)
-    except OSError as e:
-        print(e)
+pipe_name = ''
+with open('pipe_name', 'r') as pnfile:
+    pipe_name = pnfile.readline()
 
-    print(filename)
-    fifo = os.open(filename, os.O_WRONLY)
-    print('opened')
-    for i in range(5):
-        write_to_pipe(fifo, str(i) + '\n')
-        #os.write(fifo, (str(i) + '\n').encode('utf-8'))
-        time.sleep(1)
-    os.close(fifo)
 
+pipe = os.open(pipe_name, os.O_WRONLY)
+for i in range(5):
+    os.write(pipe, (str(i) + '\n').encode('utf-8'))
+    time.sleep(1)

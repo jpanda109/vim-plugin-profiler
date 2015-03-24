@@ -1,3 +1,3 @@
 function! VPLogInfo()
-    pyfile log_info.py
+    pyfile plugin/log_info.py
 endfunc

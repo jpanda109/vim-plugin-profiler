@@ -3,6 +3,7 @@ import tempfile
 import queue
 import threading
 import sys
+import curses
 
 
 def process_input(input_queue):

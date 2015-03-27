@@ -1,0 +1,880 @@
+FUNCTION  GetPythonIndent()
+Called 2 times
+Total time:   0.013192
+ Self time:   0.013192
+
+count  total (s)   self (s)
+                            
+                              " If this line is explicitly joined: If the previous line was also joined,
+                              " line it up with that one, otherwise add two 'shiftwidth'
+    2              0.000084   if getline(a:lnum - 1) =~ '\\$'
+                                if a:lnum > 1 && getline(a:lnum - 2) =~ '\\$'
+                                  return indent(a:lnum - 1)
+                                endif
+                                return indent(a:lnum - 1) + (exists("g:pyindent_continue") ? eval(g:pyindent_continue) : (shiftwidth() * 2))
+                              endif
+                            
+                              " If the start of the line is in a string don't change the indent.
+    2              0.000170   if has('syntax_items') && synIDattr(synID(a:lnum, 1, 1), "name") =~ "String$"
+                                return -1
+                              endif
+                            
+                              " Search backwards for the previous non-empty line.
+    2              0.000030   let plnum = prevnonblank(v:lnum - 1)
+                            
+    2              0.000007   if plnum == 0
+                                " This is the first non-empty line, use zero indent.
+                                return 0
+                              endif
+                            
+                              " If the previous line is inside parenthesis, use the indent of the starting
+                              " line.
+                              " Trick: use the non-existing "dummy" variable to break out of the loop when
+                              " going too far back.
+    2              0.000021   call cursor(plnum, 1)
+    2              0.005619   let parlnum = searchpair('(\|{\|\[', '', ')\|}\|\]', 'nbW', "line('.') < " . (plnum - s:maxoff) . " ? dummy :" . " synIDattr(synID(line('.'), col('.'), 1), 'name')" . " =~ '\\(Comment\\|Todo\\|String\\)$'")
+    2              0.000013   if parlnum > 0
+                                let plindent = indent(parlnum)
+                                let plnumstart = parlnum
+                              else
+    2              0.000019     let plindent = indent(plnum)
+    2              0.000009     let plnumstart = plnum
+    2              0.000004   endif
+                            
+                            
+                              " When inside parenthesis: If at the first line below the parenthesis add
+                              " two 'shiftwidth', otherwise same as previous line.
+                              " i = (a
+                              "       + b
+                              "       + c)
+    2              0.000017   call cursor(a:lnum, 1)
+    2              0.001584   let p = searchpair('(\|{\|\[', '', ')\|}\|\]', 'bW', "line('.') < " . (a:lnum - s:maxoff) . " ? dummy :" . " synIDattr(synID(line('.'), col('.'), 1), 'name')" . " =~ '\\(Comment\\|Todo\\|String\\)$'")
+    2              0.000007   if p > 0
+    2              0.000007     if p == plnum
+                                  " When the start is inside parenthesis, only indent one 'shiftwidth'.
+    2              0.005311       let pp = searchpair('(\|{\|\[', '', ')\|}\|\]', 'bW', "line('.') < " . (a:lnum - s:maxoff) . " ? dummy :" . " synIDattr(synID(line('.'), col('.'), 1), 'name')" . " =~ '\\(Comment\\|Todo\\|String\\)$'")
+    2              0.000008       if pp > 0
+                            	return indent(plnum) + (exists("g:pyindent_nested_paren") ? eval(g:pyindent_nested_paren) : shiftwidth())
+                                  endif
+    2              0.000044       return indent(plnum) + (exists("g:pyindent_open_paren") ? eval(g:pyindent_open_paren) : (shiftwidth() * 2))
+                                endif
+                                if plnumstart == p
+                                  return indent(plnum)
+                                endif
+                                return plindent
+                              endif
+                            
+                            
+                              " Get the line and remove a trailing comment.
+                              " Use syntax highlighting attributes when possible.
+                              let pline = getline(plnum)
+                              let pline_len = strlen(pline)
+                              if has('syntax_items')
+                                " If the last character in the line is a comment, do a binary search for
+                                " the start of the comment.  synID() is slow, a linear search would take
+                                " too long on a long line.
+                                if synIDattr(synID(plnum, pline_len, 1), "name") =~ "\\(Comment\\|Todo\\)$"
+                                  let min = 1
+                                  let max = pline_len
+                                  while min < max
+                            	let col = (min + max) / 2
+                            	if synIDattr(synID(plnum, col, 1), "name") =~ "\\(Comment\\|Todo\\)$"
+                            	  let max = col
+                            	else
+                            	  let min = col + 1
+                            	endif
+                                  endwhile
+                                  let pline = strpart(pline, 0, min - 1)
+                                endif
+                              else
+                                let col = 0
+                                while col < pline_len
+                                  if pline[col] == '#'
+                            	let pline = strpart(pline, 0, col)
+                            	break
+                                  endif
+                                  let col = col + 1
+                                endwhile
+                              endif
+                            
+                              " If the previous line ended with a colon, indent this line
+                              if pline =~ ':\s*$'
+                                return plindent + shiftwidth()
+                              endif
+                            
+                              " If the previous line was a stop-execution statement...
+                              if getline(plnum) =~ '^\s*\(break\|continue\|raise\|return\|pass\)\>'
+                                " See if the user has already dedented
+                                if indent(a:lnum) > indent(plnum) - shiftwidth()
+                                  " If not, recommend one dedent
+                                  return indent(plnum) - shiftwidth()
+                                endif
+                                " Otherwise, trust the user
+                                return -1
+                              endif
+                            
+                              " If the current line begins with a keyword that lines up with "try"
+                              if getline(a:lnum) =~ '^\s*\(except\|finally\)\>'
+                                let lnum = a:lnum - 1
+                                while lnum >= 1
+                                  if getline(lnum) =~ '^\s*\(try\|except\)\>'
+                            	let ind = indent(lnum)
+                            	if ind >= indent(a:lnum)
+                            	  return -1	" indent is already less than this
+                            	endif
+                            	return ind	" line up with previous try or except
+                                  endif
+                                  let lnum = lnum - 1
+                                endwhile
+                                return -1		" no matching "try"!
+                              endif
+                            
+                              " If the current line begins with a header keyword, dedent
+                              if getline(a:lnum) =~ '^\s*\(elif\|else\)\>'
+                            
+                                " Unless the previous line was a one-liner
+                                if getline(plnumstart) =~ '^\s*\(for\|if\|try\)\>'
+                                  return plindent
+                                endif
+                            
+                                " Or the user has already dedented
+                                if indent(a:lnum) <= plindent - shiftwidth()
+                                  return -1
+                                endif
+                            
+                                return plindent - shiftwidth()
+                              endif
+                            
+                              " When after a () construct we probably want to go back to the start line.
+                              " a = (b
+                              "       + c)
+                              " here
+                              if parlnum > 0
+                                return plindent
+                              endif
+                            
+                              return -1
+                            
+
+FUNCTION  <SNR>30_Highlight_Matching_Pair()
+Called 14 times
+Total time:   0.002298
+ Self time:   0.002298
+
+count  total (s)   self (s)
+                              " Remove any previous match.
+   14              0.000169   if exists('w:paren_hl_on') && w:paren_hl_on
+                                3match none
+                                let w:paren_hl_on = 0
+                              endif
+                            
+                              " Avoid that we remove the popup menu.
+                              " Return when there are no colors (looks like the cursor jumps).
+   14              0.000158   if pumvisible() || (&t_Co < 8 && !has("gui_running"))
+                                return
+                              endif
+                            
+                              " Get the character under the cursor and check if it's in 'matchpairs'.
+   14              0.000122   let c_lnum = line('.')
+   14              0.000090   let c_col = col('.')
+   14              0.000044   let before = 0
+                            
+   14              0.000156   let c = getline(c_lnum)[c_col - 1]
+   14              0.000493   let plist = split(&matchpairs, '.\zs[:,]')
+   14              0.000115   let i = index(plist, c)
+   14              0.000038   if i < 0
+                                " not found, in Insert mode try character before the cursor
+   14              0.000120     if c_col > 1 && (mode() == 'i' || mode() == 'R')
+    7              0.000025       let before = 1
+    7              0.000047       let c = getline(c_lnum)[c_col - 2]
+    7              0.000037       let i = index(plist, c)
+    7              0.000011     endif
+   14              0.000031     if i < 0
+                                  " not found, nothing to do
+   14              0.000033       return
+                                endif
+                              endif
+                            
+                              " Figure out the arguments for searchpairpos().
+                              if i % 2 == 0
+                                let s_flags = 'nW'
+                                let c2 = plist[i + 1]
+                              else
+                                let s_flags = 'nbW'
+                                let c2 = c
+                                let c = plist[i - 1]
+                              endif
+                              if c == '['
+                                let c = '\['
+                                let c2 = '\]'
+                              endif
+                            
+                              " Find the match.  When it was just before the cursor move it there for a
+                              " moment.
+                              if before > 0
+                                let save_cursor = winsaveview()
+                                call cursor(c_lnum, c_col - before)
+                              endif
+                            
+                              " When not in a string or comment ignore matches inside them.
+                              " We match "escape" for special items, such as lispEscapeSpecial.
+                              let s_skip ='synIDattr(synID(line("."), col("."), 0), "name") ' . '=~?  "string\\|character\\|singlequote\\|escape\\|comment"'
+                              execute 'if' s_skip '| let s_skip = 0 | endif'
+                            
+                              " Limit the search to lines visible in the window.
+                              let stoplinebottom = line('w$')
+                              let stoplinetop = line('w0')
+                              if i % 2 == 0
+                                let stopline = stoplinebottom
+                              else
+                                let stopline = stoplinetop
+                              endif
+                            
+                              " Limit the search time to 300 msec to avoid a hang on very long lines.
+                              " This fails when a timeout is not supported.
+                              if mode() == 'i' || mode() == 'R'
+                                let timeout = exists("b:matchparen_insert_timeout") ? b:matchparen_insert_timeout : g:matchparen_insert_timeout
+                              else
+                                let timeout = exists("b:matchparen_timeout") ? b:matchparen_timeout : g:matchparen_timeout
+                              endif
+                              try
+                                let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline, timeout)
+                              catch /E118/
+                                " Can't use the timeout, restrict the stopline a bit more to avoid taking
+                                " a long time on closed folds and long lines.
+                                " The "viewable" variables give a range in which we can scroll while
+                                " keeping the cursor at the same position.
+                                " adjustedScrolloff accounts for very large numbers of scrolloff.
+                                let adjustedScrolloff = min([&scrolloff, (line('w$') - line('w0')) / 2])
+                                let bottom_viewable = min([line('$'), c_lnum + &lines - adjustedScrolloff - 2])
+                                let top_viewable = max([1, c_lnum-&lines+adjustedScrolloff + 2])
+                                " one of these stoplines will be adjusted below, but the current values are
+                                " minimal boundaries within the current window
+                                if i % 2 == 0
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = min([line2byte("$"), line2byte(".") + col(".") + &smc * 2])
+                            	let stopline = min([bottom_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = min([bottom_viewable, c_lnum + 100])
+                                  endif
+                                  let stoplinebottom = stopline
+                                else
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = max([1, line2byte(".") + col(".") - &smc * 2])
+                            	let stopline = max([top_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = max([top_viewable, c_lnum - 100])
+                                  endif
+                                  let stoplinetop = stopline
+                                endif
+                                let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline)
+                              endtry
+                            
+                              if before > 0
+                                call winrestview(save_cursor)
+                              endif
+                            
+                              " If a match is found setup match highlighting.
+                              if m_lnum > 0 && m_lnum >= stoplinetop && m_lnum <= stoplinebottom 
+                                exe '3match MatchParen /\(\%' . c_lnum . 'l\%' . (c_col - before) . 'c\)\|\(\%' . m_lnum . 'l\%' . m_col . 'c\)/'
+                                let w:paren_hl_on = 1
+                              endif
+
+FUNCTION  39()
+Called 17 times
+Total time:   0.000453
+ Self time:   0.000453
+
+count  total (s)   self (s)
+   17              0.000218     if !exists("b:syntastic_loclist") || empty(b:syntastic_loclist)
+                                    let b:syntastic_loclist = g:SyntasticLoclist.New([])
+                                endif
+   17              0.000056     return b:syntastic_loclist
+
+FUNCTION  syntastic#log#debug()
+Called 2 times
+Total time:   0.000070
+ Self time:   0.000048
+
+count  total (s)   self (s)
+    2   0.000058   0.000036     if !s:_isDebugEnabled(a:level)
+    2              0.000005         return
+                                endif
+                            
+                                let leader = s:_log_timestamp()
+                                call s:_logRedirect(1)
+                            
+                                if a:0 > 0
+                                    " filter out dictionary functions
+                                    echomsg leader . a:msg . ' ' . strtrans(string(type(a:1) == type({}) || type(a:1) == type([]) ? filter(copy(a:1), 'type(v:val) != type(function("tr"))') : a:1))
+                                else
+                                    echomsg leader . a:msg
+                                endif
+                            
+                                call s:_logRedirect(0)
+
+FUNCTION  <SNR>54_OnCursorMovedNormalMode()
+Called 5 times
+Total time:   0.002425
+ Self time:   0.001526
+
+count  total (s)   self (s)
+    5   0.000383   0.000068   if !s:AllowedToCompleteInCurrentFile()
+                                return
+                              endif
+                            
+    5   0.000648   0.000064   call s:OnFileReadyToParse()
+    5              0.001355   py ycm_state.OnCursorMoved()
+
+FUNCTION  <SNR>54_InvokeCompletion()
+Called 3 times
+Total time:   0.000914
+ Self time:   0.000211
+
+count  total (s)   self (s)
+    3              0.000026   if &completefunc != "youcompleteme#Complete"
+                                return
+                              endif
+                            
+    3   0.000772   0.000069   if s:InsideCommentOrStringAndShouldStop() || s:OnBlankLine()
+    1              0.000003     return
+                              endif
+                            
+                              " This is tricky. First, having 'refresh' set to 'always' in the dictionary
+                              " that our completion function returns makes sure that our completion function
+                              " is called on every keystroke. Second, when the sequence of characters the
+                              " user typed produces no results in our search an infinite loop can occur. The
+                              " problem is that our feedkeys call triggers the OnCursorMovedI event which we
+                              " are tied to. We prevent this infinite loop from starting by making sure that
+                              " the user has moved the cursor since the last time we provided completion
+                              " results.
+    2              0.000009   if !s:cursor_moved
+                                return
+                              endif
+                            
+                              " <c-x><c-u> invokes the user's completion function (which we have set to
+                              " youcompleteme#Complete), and <c-p> tells Vim to select the previous
+                              " completion candidate. This is necessary because by default, Vim selects the
+                              " first candidate when completion is invoked, and selecting a candidate
+                              " automatically replaces the current text with it. Calling <c-p> forces Vim to
+                              " deselect the first candidate and in turn preserve the user's current text
+                              " until he explicitly chooses to replace it with a completion.
+    2              0.000035   call feedkeys( "\<C-X>\<C-U>\<C-P>", 'n' )
+
+FUNCTION  48()
+Called 17 times
+Total time:   0.002099
+ Self time:   0.002099
+
+count  total (s)   self (s)
+   17              0.000116     if !exists("self._stl_format")
+                                    let self._stl_format = ''
+                                endif
+   17              0.000089     if !exists("self._stl_flag")
+                                    let self._stl_flag = ''
+                                endif
+                            
+   17              0.000094     if g:syntastic_stl_format !=# self._stl_format
+                                    let self._stl_format = g:syntastic_stl_format
+                            
+                                    if !empty(self._rawLoclist)
+                                        let errors = self.errors()
+                                        let warnings = self.warnings()
+                            
+                                        let num_errors = len(errors)
+                                        let num_warnings = len(warnings)
+                                        let num_issues = len(self._rawLoclist)
+                            
+                                        let output = self._stl_format
+                            
+                                        "hide stuff wrapped in %E(...) unless there are errors
+                                        let output = substitute(output, '\m\C%E{\([^}]*\)}', num_errors ? '\1' : '' , 'g')
+                            
+                                        "hide stuff wrapped in %W(...) unless there are warnings
+                                        let output = substitute(output, '\m\C%W{\([^}]*\)}', num_warnings ? '\1' : '' , 'g')
+                            
+                                        "hide stuff wrapped in %B(...) unless there are both errors and warnings
+                                        let output = substitute(output, '\m\C%B{\([^}]*\)}', (num_warnings && num_errors) ? '\1' : '' , 'g')
+                            
+                                        "sub in the total errors/warnings/both
+                                        let output = substitute(output, '\m\C%w', num_warnings, 'g')
+                                        let output = substitute(output, '\m\C%e', num_errors, 'g')
+                                        let output = substitute(output, '\m\C%t', num_issues, 'g')
+                            
+                                        "first error/warning line num
+                                        let output = substitute(output, '\m\C%F', num_issues ? self._rawLoclist[0]['lnum'] : '', 'g')
+                            
+                                        "first error line num
+                                        let output = substitute(output, '\m\C%fe', num_errors ? errors[0]['lnum'] : '', 'g')
+                            
+                                        "first warning line num
+                                        let output = substitute(output, '\m\C%fw', num_warnings ? warnings[0]['lnum'] : '', 'g')
+                            
+                                        let self._stl_flag = output
+                                    else
+                                        let self._stl_flag = ''
+                                    endif
+                                endif
+                            
+   17              0.000049     return self._stl_flag
+
+FUNCTION  youcompleteme#Complete()
+Called 4 times
+Total time:   0.013651
+ Self time:   0.001700
+
+count  total (s)   self (s)
+                              " After the user types one character after the call to the omnifunc, the
+                              " completefunc will be called because of our mapping that calls the
+                              " completefunc on every keystroke. Therefore we need to delegate the call we
+                              " 'stole' back to the omnifunc
+    4              0.000021   if s:omnifunc_mode
+                                return youcompleteme#OmniComplete( a:findstart, a:base )
+                              endif
+                            
+    4              0.000011   if a:findstart
+                                " InvokeCompletion has this check but we also need it here because of random
+                                " Vim bugs and unfortunate interactions with the autocommands of other
+                                " plugins
+    2              0.000008     if !s:cursor_moved
+                                  " for vim, -2 means not found but don't trigger an error message
+                                  " see :h complete-functions
+                                  return -2
+                                endif
+                            
+    2              0.000192     if !pyeval( 'ycm_state.IsServerAlive()' )
+                                  return -2
+                                endif
+    2              0.000887     py ycm_state.CreateCompletionRequest()
+    2              0.000397     return pyeval( 'base.CompletionStartColumn()' )
+                              else
+    2   0.011985   0.000034     return s:GetCompletions()
+                              endif
+
+FUNCTION  <SNR>54_OnFileReadyToParse()
+Called 7 times
+Total time:   0.013668
+ Self time:   0.013251
+
+count  total (s)   self (s)
+                              " We need to call this just in case there is no b:ycm_changetick; this can
+                              " happen for special buffers.
+    7   0.000207   0.000080   call s:SetUpYcmChangedTick()
+                            
+                              " Order is important here; we need to extract any done diagnostics before
+                              " reparsing the file again. If we sent the new parse request first, then
+                              " the response would always be pending when we called
+                              " UpdateDiagnosticNotifications.
+    7   0.000376   0.000086   call s:UpdateDiagnosticNotifications()
+                            
+    7              0.000064   let buffer_changed = b:changedtick != b:ycm_changedtick.file_ready_to_parse
+    7              0.000021   if buffer_changed
+    2              0.012797     py ycm_state.OnFileReadyToParse()
+    2              0.000018   endif
+    7              0.000067   let b:ycm_changedtick.file_ready_to_parse = b:changedtick
+
+FUNCTION  <SNR>54_UpdateCursorMoved()
+Called 7 times
+Total time:   0.000306
+ Self time:   0.000306
+
+count  total (s)   self (s)
+    7              0.000081   let current_position = getpos('.')
+    7              0.000055   let s:cursor_moved = current_position != s:old_cursor_position
+                            
+    7              0.000095   let s:moved_vertically_in_insert_mode = s:old_cursor_position != [] && current_position[ 1 ] != s:old_cursor_position[ 1 ]
+                            
+    7              0.000039   let s:old_cursor_position = current_position
+
+FUNCTION  <SNR>54_OnInsertLeave()
+Called 2 times
+Total time:   0.024386
+ Self time:   0.011115
+
+count  total (s)   self (s)
+    2   0.000224   0.000037   if !s:AllowedToCompleteInCurrentFile()
+                                return
+                              endif
+                            
+    2              0.000010   let s:omnifunc_mode = 0
+    2   0.013115   0.000031   call s:OnFileReadyToParse()
+    2              0.010927   py ycm_state.OnInsertLeave()
+    2              0.000042   if g:ycm_autoclose_preview_window_after_completion || g:ycm_autoclose_preview_window_after_insertion
+                                call s:ClosePreviewWindowIfNeeded()
+                              endif
+
+FUNCTION  SyntasticLoclistHide()
+Called 1 time
+Total time:   0.000728
+ Self time:   0.000705
+
+count  total (s)   self (s)
+    1   0.000036   0.000013     call syntastic#log#debug(g:_SYNTASTIC_DEBUG_NOTIFICATIONS, 'loclist: hide')
+    1              0.000688     silent! lclose
+
+FUNCTION  <SNR>54_GetCompletions()
+Called 2 times
+Total time:   0.011951
+ Self time:   0.011951
+
+count  total (s)   self (s)
+    2              0.011807   py results = GetCompletionsInner()
+    2              0.000116   let results = pyeval( 'results' )
+    2              0.000015   let s:searched_and_results_found = len( results.words ) != 0
+    2              0.000004   return results
+
+FUNCTION  <SNR>54_OnVimLeave()
+Called 1 time
+Total time:   0.000072
+ Self time:   0.000072
+
+count  total (s)   self (s)
+    1              0.000071   py ycm_state.OnVimLeave()
+
+FUNCTION  <SNR>54_SetUpYcmChangedTick()
+Called 7 times
+Total time:   0.000127
+ Self time:   0.000127
+
+count  total (s)   self (s)
+    7              0.000115   let b:ycm_changedtick  = get( b:, 'ycm_changedtick', {   'file_ready_to_parse' : -1, } )
+
+FUNCTION  <SNR>54_InsideCommentOrStringAndShouldStop()
+Called 3 times
+Total time:   0.000393
+ Self time:   0.000127
+
+count  total (s)   self (s)
+    3   0.000306   0.000040   let retval = s:InsideCommentOrString()
+    3              0.000017   let inside_comment = retval == 1
+    3              0.000013   let inside_string = retval == 2
+                            
+    3              0.000020   if inside_comment && g:ycm_complete_in_comments || inside_string && g:ycm_complete_in_strings
+                                return 0
+                              endif
+                            
+    3              0.000009   return retval
+
+FUNCTION  <SNR>54_OnBufferUnload()
+Called 1 time
+Total time:   0.002227
+ Self time:   0.002149
+
+count  total (s)   self (s)
+    1   0.000096   0.000018   if !s:AllowedToCompleteInCurrentFile() || empty( a:deleted_buffer_file )
+                                return
+                              endif
+                            
+    1              0.002121   py ycm_state.OnBufferUnload( vim.eval( 'a:deleted_buffer_file' ) )
+
+FUNCTION  <SNR>54_AllowedToCompleteInCurrentFile()
+Called 17 times
+Total time:   0.001112
+ Self time:   0.001112
+
+count  total (s)   self (s)
+   17              0.000402   if empty( &filetype ) || getbufvar( winbufnr( winnr() ), "&buftype" ) ==# 'nofile' || &filetype ==# 'qf'
+                                return 0
+                              endif
+                            
+   17              0.000258   let whitelist_allows = has_key( g:ycm_filetype_whitelist, '*' ) || has_key( g:ycm_filetype_whitelist, &filetype )
+   17              0.000154   let blacklist_allows = !has_key( g:ycm_filetype_blacklist, &filetype )
+                            
+   17              0.000096   return whitelist_allows && blacklist_allows
+
+FUNCTION  <SNR>54_IdentifierFinishedOperations()
+Called 3 times
+Total time:   0.001979
+ Self time:   0.001979
+
+count  total (s)   self (s)
+    3              0.000248   if !pyeval( 'base.CurrentIdentifierFinished()' )
+    2              0.000006     return
+                              endif
+    1              0.001708   py ycm_state.OnCurrentIdentifierFinished()
+    1              0.000009   let s:omnifunc_mode = 0
+
+FUNCTION  <SNR>26__isDebugEnabled_smart()
+Called 2 times
+Total time:   0.000022
+ Self time:   0.000022
+
+count  total (s)   self (s)
+    2              0.000019     return and(g:syntastic_debug, a:level)
+
+FUNCTION  <SNR>18__is_same_index()
+Called 5 times
+Total time:   0.000267
+ Self time:   0.000267
+
+count  total (s)   self (s)
+    5              0.000041     if a:old_line >= 0 && a:line == a:old_line && a:idx >= 0
+                                    if len(a:messages) <= 1
+                                        return 1
+                                    endif
+                            
+                                    if a:messages[a:idx].scol <= a:column || a:idx == 0
+                                        if a:idx == len(a:messages) - 1 || a:column < a:messages[a:idx + 1].scol
+                                            return 1
+                                        else
+                                            return 0
+                                        endif
+                                    else
+                                        return 0
+                                    endif
+                                else
+    5              0.000014         return 0
+                                endif
+
+FUNCTION  <SNR>54_BufferTextChangedSinceLastMoveInInsertMode()
+Called 7 times
+Total time:   0.000331
+ Self time:   0.000331
+
+count  total (s)   self (s)
+    7              0.000030   if s:moved_vertically_in_insert_mode
+    1              0.000008     let s:previous_num_chars_on_current_line = -1
+    1              0.000003     return 0
+                              endif
+                            
+    6              0.000063   let num_chars_in_current_cursor_line = strlen( getline('.') )
+                            
+    6              0.000029   if s:previous_num_chars_on_current_line == -1
+    2              0.000019     let s:previous_num_chars_on_current_line = num_chars_in_current_cursor_line
+    2              0.000004     return 0
+                              endif
+                            
+    4              0.000031   let changed_text_on_current_line = num_chars_in_current_cursor_line != s:previous_num_chars_on_current_line
+    4              0.000020   let s:previous_num_chars_on_current_line = num_chars_in_current_cursor_line
+                            
+    4              0.000012   return changed_text_on_current_line
+
+FUNCTION  <SNR>54_OnCursorMovedInsertMode()
+Called 7 times
+Total time:   0.005456
+ Self time:   0.001564
+
+count  total (s)   self (s)
+    7   0.000427   0.000065   if !s:AllowedToCompleteInCurrentFile()
+                                return
+                              endif
+                            
+    7              0.000982   py ycm_state.OnCursorMoved()
+    7   0.000431   0.000125   call s:UpdateCursorMoved()
+                            
+                              " Basically, we need to only trigger the completion menu when the user has
+                              " inserted or deleted a character, NOT just when the user moves in insert mode
+                              " (with, say, the arrow keys). If we trigger the menu even on pure moves, then
+                              " it's impossible to move in insert mode since the up/down arrows start moving
+                              " the selected completion in the completion menu. Yeah, people shouldn't be
+                              " moving in insert mode at all (that's what normal mode is for) but explain
+                              " that to the users who complain...
+    7   0.000425   0.000094   if !s:BufferTextChangedSinceLastMoveInInsertMode()
+    4              0.000006     return
+                              endif
+                            
+    3   0.002020   0.000041   call s:IdentifierFinishedOperations()
+    3              0.000015   if g:ycm_autoclose_preview_window_after_completion
+                                call s:ClosePreviewWindowIfNeeded()
+                              endif
+                            
+    3              0.000011   if g:ycm_auto_trigger || s:omnifunc_mode
+    3   0.000953   0.000039     call s:InvokeCompletion()
+    3              0.000005   endif
+                            
+                              " We have to make sure we correctly leave omnifunc mode even when the user
+                              " inserts something like a "operator[]" candidate string which fails
+                              " CurrentIdentifierFinished check.
+    3              0.000018   if s:omnifunc_mode && !pyeval( 'base.LastEnteredCharIsIdentifierChar()')
+                                let s:omnifunc_mode = 0
+                              endif
+
+FUNCTION  SyntasticRefreshCursor()
+Called 5 times
+Total time:   0.001338
+ Self time:   0.001071
+
+count  total (s)   self (s)
+    5              0.000074     if !exists('b:syntastic_private_messages') || empty(b:syntastic_private_messages)
+                                    " file not checked
+                                    return
+                                endif
+                            
+    5              0.000035     if !exists('b:syntastic_private_line')
+                                    let b:syntastic_private_line = -1
+                                endif
+    5              0.000030     let l = line('.')
+    5              0.000068     let current_messages = get(b:syntastic_private_messages, l, {})
+                            
+    5              0.000040     if !exists('b:syntastic_cursor_columns')
+                                    let b:syntastic_cursor_columns = g:syntastic_cursor_columns
+                                endif
+                            
+    5              0.000019     if b:syntastic_cursor_columns
+    5              0.000038         let c = virtcol('.')
+    5              0.000036         if !exists('b:syntastic_private_idx')
+                                        let b:syntastic_private_idx = -1
+                                    endif
+                            
+    5   0.000391   0.000124         if s:_is_same_index(l, b:syntastic_private_line, c, b:syntastic_private_idx, current_messages)
+                                        return
+                                    else
+    5              0.000034             let b:syntastic_private_line = l
+    5              0.000009         endif
+                            
+    5              0.000029         if !empty(current_messages)
+                                        let b:syntastic_private_idx = s:_find_index(c, current_messages)
+                                        call syntastic#util#wideMsg(current_messages[b:syntastic_private_idx].text)
+                                    else
+    5              0.000027             let b:syntastic_private_idx = -1
+    5              0.000056             echo
+    5              0.000006         endif
+    5              0.000010     else
+                                    if l == b:syntastic_private_line
+                                        return
+                                    endif
+                                    let b:syntastic_private_line = l
+                            
+                                    if !empty(current_messages)
+                                        call syntastic#util#wideMsg(current_messages[0].text)
+                                    else
+                                        echo
+                                    endif
+                                endif
+
+FUNCTION  SyntasticStatuslineFlag()
+Called 17 times
+Total time:   0.002912
+ Self time:   0.000360
+
+count  total (s)   self (s)
+   17   0.002879   0.000327     return g:SyntasticLoclist.current().getStatuslineFlag()
+
+FUNCTION  <SNR>54_OnInsertEnter()
+Called 2 times
+Total time:   0.000234
+ Self time:   0.000064
+
+count  total (s)   self (s)
+    2   0.000201   0.000031   if !s:AllowedToCompleteInCurrentFile()
+                                return
+                              endif
+                            
+    2              0.000016   let s:old_cursor_position = []
+
+FUNCTION  <SNR>25_QuitPreHook()
+Called 1 time
+Total time:   0.000949
+ Self time:   0.000142
+
+count  total (s)   self (s)
+    1   0.000114   0.000067     call syntastic#log#debug(g:_SYNTASTIC_DEBUG_AUTOCOMMANDS, 'autocmd: QuitPre, buffer ' . bufnr("") . ' = ' . string(bufname(str2nr(bufnr("")))))
+    1   0.000069   0.000037     let b:syntastic_skip_checks = get(b:, 'syntastic_skip_checks', 0) || !syntastic#util#var('check_on_wq')
+    1              0.000008     if get(w:, 'syntastic_loclist_set', 0)
+    1   0.000747   0.000019         call SyntasticLoclistHide()
+    1              0.000005     endif
+
+FUNCTION  <SNR>54_DiagnosticUiSupportedForCurrentFiletype()
+Called 7 times
+Total time:   0.000070
+ Self time:   0.000070
+
+count  total (s)   self (s)
+    7              0.000061   return get( s:diagnostic_ui_filetypes, &filetype, 0 )
+
+FUNCTION  syntastic#util#var()
+Called 1 time
+Total time:   0.000032
+ Self time:   0.000032
+
+count  total (s)   self (s)
+    1              0.000031     return exists('b:syntastic_' . a:name) ? b:syntastic_{a:name} : exists('g:syntastic_' . a:name) ? g:syntastic_{a:name} : a:0 > 0 ? a:1 : ''
+
+FUNCTION  <SNR>54_OnBlankLine()
+Called 3 times
+Total time:   0.000310
+ Self time:   0.000310
+
+count  total (s)   self (s)
+    3              0.000304   return pyeval( 'not vim.current.line or vim.current.line.isspace()' )
+
+FUNCTION  <SNR>54_InsideCommentOrString()
+Called 3 times
+Total time:   0.000266
+ Self time:   0.000266
+
+count  total (s)   self (s)
+                              " Has to be col('.') -1 because col('.') doesn't exist at this point. We are
+                              " in insert mode when this func is called.
+    3              0.000180   let syntax_group = synIDattr( synIDtrans( synID( line( '.' ), col( '.' ) - 1, 1 ) ), 'name')
+                            
+    3              0.000024   if stridx(syntax_group, 'Comment') > -1
+                                return 1
+                              endif
+                            
+    3              0.000014   if stridx(syntax_group, 'String') > -1
+                                return 2
+                              endif
+                            
+    3              0.000007   return 0
+
+FUNCTION  <SNR>54_UpdateDiagnosticNotifications()
+Called 7 times
+Total time:   0.000290
+ Self time:   0.000220
+
+count  total (s)   self (s)
+    7   0.000219   0.000149   let should_display_diagnostics = g:ycm_show_diagnostics_ui && s:DiagnosticUiSupportedForCurrentFiletype() && pyeval( 'ycm_state.NativeFiletypeCompletionUsable()' )
+                            
+    7              0.000028   if !should_display_diagnostics
+    7              0.000017     return
+                              endif
+                            
+                              py ycm_state.UpdateDiagnosticInterface()
+
+FUNCTIONS SORTED ON TOTAL TIME
+count  total (s)   self (s)  function
+    2   0.024386   0.011115  <SNR>54_OnInsertLeave()
+    7   0.013668   0.013251  <SNR>54_OnFileReadyToParse()
+    4   0.013651   0.001700  youcompleteme#Complete()
+    2   0.013192             GetPythonIndent()
+    2   0.011951             <SNR>54_GetCompletions()
+    7   0.005456   0.001564  <SNR>54_OnCursorMovedInsertMode()
+   17   0.002912   0.000360  SyntasticStatuslineFlag()
+    5   0.002425   0.001526  <SNR>54_OnCursorMovedNormalMode()
+   14   0.002298             <SNR>30_Highlight_Matching_Pair()
+    1   0.002227   0.002149  <SNR>54_OnBufferUnload()
+   17   0.002099             48()
+    3   0.001979             <SNR>54_IdentifierFinishedOperations()
+    5   0.001338   0.001071  SyntasticRefreshCursor()
+   17   0.001112             <SNR>54_AllowedToCompleteInCurrentFile()
+    1   0.000949   0.000142  <SNR>25_QuitPreHook()
+    3   0.000914   0.000211  <SNR>54_InvokeCompletion()
+    1   0.000728   0.000705  SyntasticLoclistHide()
+   17   0.000453             39()
+    3   0.000393   0.000127  <SNR>54_InsideCommentOrStringAndShouldStop()
+    7   0.000331             <SNR>54_BufferTextChangedSinceLastMoveInInsertMode()
+
+FUNCTIONS SORTED ON SELF TIME
+count  total (s)   self (s)  function
+    7   0.013668   0.013251  <SNR>54_OnFileReadyToParse()
+    2              0.013192  GetPythonIndent()
+    2              0.011951  <SNR>54_GetCompletions()
+    2   0.024386   0.011115  <SNR>54_OnInsertLeave()
+   14              0.002298  <SNR>30_Highlight_Matching_Pair()
+    1   0.002227   0.002149  <SNR>54_OnBufferUnload()
+   17              0.002099  48()
+    3              0.001979  <SNR>54_IdentifierFinishedOperations()
+    4   0.013651   0.001700  youcompleteme#Complete()
+    7   0.005456   0.001564  <SNR>54_OnCursorMovedInsertMode()
+    5   0.002425   0.001526  <SNR>54_OnCursorMovedNormalMode()
+   17              0.001112  <SNR>54_AllowedToCompleteInCurrentFile()
+    5   0.001338   0.001071  SyntasticRefreshCursor()
+    1   0.000728   0.000705  SyntasticLoclistHide()
+   17              0.000453  39()
+   17   0.002912   0.000360  SyntasticStatuslineFlag()
+    7              0.000331  <SNR>54_BufferTextChangedSinceLastMoveInInsertMode()
+    3              0.000310  <SNR>54_OnBlankLine()
+    7              0.000306  <SNR>54_UpdateCursorMoved()
+    5              0.000267  <SNR>18__is_same_index()
+

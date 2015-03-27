@@ -1,0 +1,115 @@
+FUNCTION  <SNR>40_OnBufferUnload()
+Called 1 time
+Total time:   0.000049
+ Self time:   0.000029
+
+count  total (s)   self (s)
+    1   0.000045   0.000025   if !s:AllowedToCompleteInCurrentFile() || empty( a:deleted_buffer_file )
+    1              0.000001     return
+                              endif
+                            
+                              py ycm_state.OnBufferUnload( vim.eval( 'a:deleted_buffer_file' ) )
+
+FUNCTION  syntastic#log#debug()
+Called 1 time
+Total time:   0.000049
+ Self time:   0.000034
+
+count  total (s)   self (s)
+    1   0.000043   0.000028     if !s:_isDebugEnabled(a:level)
+    1              0.000003         return
+                                endif
+                            
+                                let leader = s:_log_timestamp()
+                                call s:_logRedirect(1)
+                            
+                                if a:0 > 0
+                                    " filter out dictionary functions
+                                    echomsg leader . a:msg . ' ' . strtrans(string(type(a:1) == type({}) || type(a:1) == type([]) ? filter(copy(a:1), 'type(v:val) != type(function("tr"))') : a:1))
+                                else
+                                    echomsg leader . a:msg
+                                endif
+                            
+                                call s:_logRedirect(0)
+
+FUNCTION  <SNR>40_OnVimLeave()
+Called 1 time
+Total time:   0.000262
+ Self time:   0.000262
+
+count  total (s)   self (s)
+    1              0.000258   py ycm_state.OnVimLeave()
+
+FUNCTION  <SNR>26__isDebugEnabled_smart()
+Called 1 time
+Total time:   0.000015
+ Self time:   0.000015
+
+count  total (s)   self (s)
+    1              0.000012     return and(g:syntastic_debug, a:level)
+
+FUNCTION  VPLogInfo()
+Called 1 time
+Total time:   0.000646
+ Self time:   0.000646
+
+count  total (s)   self (s)
+    1              0.000641     pyfile plugin/log_info.py
+
+FUNCTION  <SNR>25_QuitPreHook()
+Called 1 time
+Total time:   0.000195
+ Self time:   0.000114
+
+count  total (s)   self (s)
+    1   0.000108   0.000059     call syntastic#log#debug(g:_SYNTASTIC_DEBUG_AUTOCOMMANDS, 'autocmd: QuitPre, buffer ' . bufnr("") . ' = ' . string(bufname(str2nr(bufnr("")))))
+    1   0.000068   0.000036     let b:syntastic_skip_checks = get(b:, 'syntastic_skip_checks', 0) || !syntastic#util#var('check_on_wq')
+    1              0.000007     if get(w:, 'syntastic_loclist_set', 0)
+                                    call SyntasticLoclistHide()
+                                endif
+
+FUNCTION  <SNR>40_AllowedToCompleteInCurrentFile()
+Called 1 time
+Total time:   0.000020
+ Self time:   0.000020
+
+count  total (s)   self (s)
+    1              0.000015   if empty( &filetype ) || getbufvar( winbufnr( winnr() ), "&buftype" ) ==# 'nofile' || &filetype ==# 'qf'
+    1              0.000002     return 0
+                              endif
+                            
+                              let whitelist_allows = has_key( g:ycm_filetype_whitelist, '*' ) || has_key( g:ycm_filetype_whitelist, &filetype )
+                              let blacklist_allows = !has_key( g:ycm_filetype_blacklist, &filetype )
+                            
+                              return whitelist_allows && blacklist_allows
+
+FUNCTION  syntastic#util#var()
+Called 1 time
+Total time:   0.000032
+ Self time:   0.000032
+
+count  total (s)   self (s)
+    1              0.000029     return exists('b:syntastic_' . a:name) ? b:syntastic_{a:name} : exists('g:syntastic_' . a:name) ? g:syntastic_{a:name} : a:0 > 0 ? a:1 : ''
+
+FUNCTIONS SORTED ON TOTAL TIME
+count  total (s)   self (s)  function
+    1   0.000646             VPLogInfo()
+    1   0.000262             <SNR>40_OnVimLeave()
+    1   0.000195   0.000114  <SNR>25_QuitPreHook()
+    1   0.000049   0.000029  <SNR>40_OnBufferUnload()
+    1   0.000049   0.000034  syntastic#log#debug()
+    1   0.000032             syntastic#util#var()
+    1   0.000020             <SNR>40_AllowedToCompleteInCurrentFile()
+    1   0.000015             <SNR>26__isDebugEnabled_smart()
+
+FUNCTIONS SORTED ON SELF TIME
+count  total (s)   self (s)  function
+    1              0.000646  VPLogInfo()
+    1              0.000262  <SNR>40_OnVimLeave()
+    1   0.000195   0.000114  <SNR>25_QuitPreHook()
+    1   0.000049   0.000034  syntastic#log#debug()
+    1              0.000032  syntastic#util#var()
+    1   0.000049   0.000029  <SNR>40_OnBufferUnload()
+    1              0.000020  <SNR>40_AllowedToCompleteInCurrentFile()
+    1              0.000015  <SNR>26__isDebugEnabled_smart()
+

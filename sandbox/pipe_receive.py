@@ -33,12 +33,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
         pipe_name = pnfile.readline()
 
     with open(pipe_name, 'r') as pipe:
+        print("Time" + " Command")
         while True:
             if not input_queue.empty():
                 if (input_queue.get() == 'q'):
                     break
             line = pipe.readline()[:-1]
             if line.rstrip() != '':
-                print(line)
+                my_list = line.split(' ', 1);
+                print('{:>12} {:>12 }'.format(my_list[1],my_list[2])
 
     os.remove('pipe_name')

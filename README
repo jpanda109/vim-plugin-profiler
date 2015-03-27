@@ -35,6 +35,15 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
+UPDATE:
+    project now seeks to update on start times and their correlation to specific
+    vim plugins. WIll also report on CPU usage/memory and suggest correlation there.
+
+    allow user to chose what plugins to analyze, which will then have vim run with
+    and without said plugin and analyze delta(time)
+
+    can also (hopefully) run multiple plugins in conjunction to test if running
+    particular plugins result in conflicts and slows down time further
 
 
 //=================================================

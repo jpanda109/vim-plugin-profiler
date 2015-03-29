@@ -4,84 +4,85 @@ times in msec
  clock   self+sourced   self:  sourced script
  clock   elapsed:              other lines
 
-000.004  000.004: --- VIM STARTING ---
-000.083  000.079: Allocated generic buffers
-000.148  000.065: locale set
-000.153  000.005: window checked
-000.481  000.328: inits 1
-000.488  000.007: parsing arguments
-000.489  000.001: expanding arguments
-000.497  000.008: shell init
-000.675  000.178: Termcap init
-000.696  000.021: inits 2
-000.771  000.075: init highlight
-001.011  000.159  000.159: sourcing /usr/share/vim/vim74/debian.vim
-001.105  000.022  000.022: sourcing /usr/share/vim/vim74/ftoff.vim
-001.328  000.160  000.160: sourcing /home/jason/.vim/bundle/Vundle.vim/autoload/vundle.vim
-001.543  000.128  000.128: sourcing /home/jason/.vim/bundle/Vundle.vim/autoload/vundle/config.vim
-020.340  017.966  017.966: sourcing /usr/share/vim/vim74/filetype.vim
-020.473  000.035  000.035: sourcing /usr/share/vim/vim74/ftplugin.vim
-020.570  000.027  000.027: sourcing /usr/share/vim/vim74/indent.vim
-020.932  000.166  000.166: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
-021.053  000.363  000.197: sourcing /usr/share/vim/vim74/syntax/synload.vim
-021.080  000.446  000.083: sourcing /usr/share/vim/vim74/syntax/syntax.vim
-021.323  000.129  000.129: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
-022.093  000.139  000.139: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
-022.381  000.158  000.158: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
-024.222  002.826  002.529: sourcing /home/jason/.vim/bundle/vim-colors-solarized/colors/solarized.vim
-024.615  000.007  000.007: sourcing /usr/share/vim/vim74/filetype.vim
-024.689  000.005  000.005: sourcing /usr/share/vim/vim74/ftplugin.vim
-024.757  000.005  000.005: sourcing /usr/share/vim/vim74/indent.vim
-024.847  024.044  002.129: sourcing $VIM/vimrc
-024.869  000.054: sourcing vimrc file(s)
-024.985  000.024  000.024: sourcing /home/jason/.vim/plugin/heloworld/plugin/heloworld.vim
-025.325  000.287  000.287: sourcing /home/jason/.vim/bundle/YouCompleteMe/plugin/youcompleteme.vim
-025.507  000.009  000.009: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/autoloclist.vim
-025.527  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/balloons.vim
-025.546  000.007  000.007: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/checker.vim
-025.564  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/cursor.vim
-025.580  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/highlighting.vim
-025.595  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/loclist.vim
-025.610  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/modemap.vim
-025.626  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/notifiers.vim
-025.641  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/registry.vim
-025.655  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/signs.vim
-025.874  000.141  000.141: sourcing /home/jason/.vim/bundle/syntastic/autoload/syntastic/log.vim
-026.214  000.263  000.263: sourcing /home/jason/.vim/bundle/syntastic/autoload/syntastic/util.vim
-037.156  000.038  000.038: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/autoloclist.vim
-037.219  000.043  000.043: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/balloons.vim
-037.360  000.127  000.127: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/checker.vim
-037.452  000.077  000.077: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/cursor.vim
-037.530  000.064  000.064: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/highlighting.vim
-037.822  000.279  000.279: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/loclist.vim
-037.927  000.091  000.091: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/modemap.vim
-038.003  000.064  000.064: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/notifiers.vim
-038.252  000.236  000.236: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/registry.vim
-038.436  000.141  000.141: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/signs.vim
-039.218  013.552  011.988: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic.vim
-039.488  000.082  000.082: sourcing /usr/share/vim/vim74/plugin/getscriptPlugin.vim
-039.779  000.274  000.274: sourcing /usr/share/vim/vim74/plugin/gzip.vim
-039.944  000.148  000.148: sourcing /usr/share/vim/vim74/plugin/matchparen.vim
-040.376  000.416  000.416: sourcing /usr/share/vim/vim74/plugin/netrwPlugin.vim
-040.413  000.010  000.010: sourcing /usr/share/vim/vim74/plugin/rrhelper.vim
-040.453  000.024  000.024: sourcing /usr/share/vim/vim74/plugin/spellfile.vim
-040.612  000.138  000.138: sourcing /usr/share/vim/vim74/plugin/tarPlugin.vim
-040.707  000.074  000.074: sourcing /usr/share/vim/vim74/plugin/tohtml.vim
-040.849  000.126  000.126: sourcing /usr/share/vim/vim74/plugin/vimballPlugin.vim
-041.043  000.166  000.166: sourcing /usr/share/vim/vim74/plugin/zipPlugin.vim
-041.117  000.870: loading plugins
-041.125  000.008: inits 3
-041.266  000.141: reading viminfo
-041.287  000.021: setting raw mode
-041.293  000.006: start termcap
-041.334  000.041: clearing screen
-041.588  000.254: opening buffers
-042.125  000.537: BufEnter autocommands
-042.127  000.002: editing files in windows
-042.166  000.007  000.007: sourcing /home/jason/gitrepos/CS281-Final/vimprofiler/plugin.vim
-042.172  000.038: executing command arguments
-048.726  006.472  006.472: sourcing /home/jason/.vim/bundle/YouCompleteMe/autoload/youcompleteme.vim
-107.474  058.830: VimEnter autocommands
-107.477  000.003: before starting main loop
-107.896  000.419: first screen update
-107.897  000.001: --- VIM STARTED ---
+000.003  000.003: --- VIM STARTING ---
+000.067  000.064: Allocated generic buffers
+000.135  000.068: locale set
+000.139  000.004: window checked
+000.510  000.371: inits 1
+000.521  000.011: parsing arguments
+000.522  000.001: expanding arguments
+000.534  000.012: shell init
+000.780  000.246: Termcap init
+000.808  000.028: inits 2
+000.922  000.114: init highlight
+001.283  000.238  000.238: sourcing /usr/share/vim/vim74/debian.vim
+001.427  000.033  000.033: sourcing /usr/share/vim/vim74/ftoff.vim
+001.791  000.243  000.243: sourcing /home/jason/.vim/bundle/Vundle.vim/autoload/vundle.vim
+002.097  000.178  000.178: sourcing /home/jason/.vim/bundle/Vundle.vim/autoload/vundle/config.vim
+019.301  015.811  015.811: sourcing /usr/share/vim/vim74/filetype.vim
+019.441  000.033  000.033: sourcing /usr/share/vim/vim74/ftplugin.vim
+019.545  000.026  000.026: sourcing /usr/share/vim/vim74/indent.vim
+019.886  000.153  000.153: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
+020.002  000.326  000.173: sourcing /usr/share/vim/vim74/syntax/synload.vim
+020.029  000.415  000.089: sourcing /usr/share/vim/vim74/syntax/syntax.vim
+020.274  000.130  000.130: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
+021.079  000.145  000.145: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
+021.352  000.133  000.133: sourcing /usr/share/vim/vim74/syntax/syncolor.vim
+023.170  002.818  002.540: sourcing /home/jason/.vim/bundle/vim-colors-solarized/colors/solarized.vim
+023.571  000.008  000.008: sourcing /usr/share/vim/vim74/filetype.vim
+023.651  000.005  000.005: sourcing /usr/share/vim/vim74/ftplugin.vim
+023.726  000.005  000.005: sourcing /usr/share/vim/vim74/indent.vim
+023.819  022.848  002.905: sourcing $VIM/vimrc
+023.838  000.068: sourcing vimrc file(s)
+023.949  000.023  000.023: sourcing /home/jason/.vim/plugin/heloworld/plugin/heloworld.vim
+024.287  000.285  000.285: sourcing /home/jason/.vim/bundle/YouCompleteMe/plugin/youcompleteme.vim
+024.467  000.009  000.009: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/autoloclist.vim
+024.487  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/balloons.vim
+024.505  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/checker.vim
+024.524  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/cursor.vim
+024.541  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/highlighting.vim
+024.557  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/loclist.vim
+024.573  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/modemap.vim
+024.589  000.005  000.005: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/notifiers.vim
+024.606  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/registry.vim
+024.622  000.006  000.006: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/signs.vim
+024.838  000.137  000.137: sourcing /home/jason/.vim/bundle/syntastic/autoload/syntastic/log.vim
+025.168  000.253  000.253: sourcing /home/jason/.vim/bundle/syntastic/autoload/syntastic/util.vim
+036.066  000.036  000.036: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/autoloclist.vim
+036.124  000.041  000.041: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/balloons.vim
+036.257  000.120  000.120: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/checker.vim
+036.340  000.070  000.070: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/cursor.vim
+036.412  000.059  000.059: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/highlighting.vim
+036.755  000.330  000.330: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/loclist.vim
+036.931  000.147  000.147: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/modemap.vim
+037.011  000.063  000.063: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/notifiers.vim
+037.252  000.228  000.228: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/registry.vim
+037.403  000.123  000.123: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic/signs.vim
+038.657  014.024  012.417: sourcing /home/jason/.vim/bundle/syntastic/plugin/syntastic.vim
+038.996  000.218  000.218: sourcing /home/jason/.vim/bundle/cmdalias.vim/plugin/cmdalias.vim
+039.384  000.122  000.122: sourcing /usr/share/vim/vim74/plugin/getscriptPlugin.vim
+039.904  000.484  000.484: sourcing /usr/share/vim/vim74/plugin/gzip.vim
+040.179  000.248  000.248: sourcing /usr/share/vim/vim74/plugin/matchparen.vim
+040.919  000.714  000.714: sourcing /usr/share/vim/vim74/plugin/netrwPlugin.vim
+040.996  000.022  000.022: sourcing /usr/share/vim/vim74/plugin/rrhelper.vim
+041.073  000.042  000.042: sourcing /usr/share/vim/vim74/plugin/spellfile.vim
+041.432  000.330  000.330: sourcing /usr/share/vim/vim74/plugin/tarPlugin.vim
+041.610  000.136  000.136: sourcing /usr/share/vim/vim74/plugin/tohtml.vim
+041.888  000.245  000.245: sourcing /usr/share/vim/vim74/plugin/vimballPlugin.vim
+042.310  000.352  000.352: sourcing /usr/share/vim/vim74/plugin/zipPlugin.vim
+042.458  001.315: loading plugins
+042.470  000.012: inits 3
+042.727  000.257: reading viminfo
+042.757  000.030: setting raw mode
+042.767  000.010: start termcap
+042.840  000.073: clearing screen
+043.250  000.410: opening buffers
+044.160  000.910: BufEnter autocommands
+044.162  000.002: editing files in windows
+044.272  000.043  000.043: sourcing /home/jason/gitrepos/CS281-Final/vimprofiler/plugin.vim
+044.283  000.078: executing command arguments
+054.814  010.431  010.431: sourcing /home/jason/.vim/bundle/YouCompleteMe/autoload/youcompleteme.vim
+119.221  064.507: VimEnter autocommands
+119.224  000.003: before starting main loop
+119.618  000.394: first screen update
+119.619  000.001: --- VIM STARTED ---

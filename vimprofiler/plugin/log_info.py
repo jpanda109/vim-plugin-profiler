@@ -1,4 +1,7 @@
 import vim
+import os
+
 command = vim.eval('a:command')
-with open("test.txt", 'w') as f:
-    f.write(command)
+pipename = os.environ['VIMUALIZER_PIPE_NAME']
+with open(pipename, 'w') as pipe:
+    pipe.write(command.encode('utf-8'))

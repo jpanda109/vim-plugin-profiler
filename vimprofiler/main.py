@@ -1,6 +1,10 @@
 import subprocess
 import os
+import sys
 import tempfile
+import src.tasks as tasks
+import threading
+import queue
 
 
 if __name__ == '__main__':
@@ -36,12 +40,21 @@ if __name__ == '__main__':
             print(proc)
         except ValueError:
             proc = 0
-        # open pipe, block when other end closed
+
+        # start threads
+        input_queue = queue.Queue()
+        input_thread = threading.Thread(target=tasks.process_input,
+                                        args=(input_queue,), daemon=True)
+        input_thread.start()
         with open(pipe_name, 'r') as pipe:
             while True:
                 line = pipe.readline()
                 if line.rstrip() != '':
                     print(line)
+                if not input_queue.empty():
+                    if (input_queue.get() == 'q'):
+                        os.kill(proc, 9)
+                        sys.exit()
                 try:
                     os.kill(proc, 0)
                 except OSError:

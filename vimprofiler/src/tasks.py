@@ -1,7 +1,4 @@
-import sys
-
-
-def process_input(input_queue):
+def process_input(input_queue, screen):
     while True:
-        user_input = sys.stdin.read(1)
-        input_queue.put(user_input)
+        keypress = screen.getkey()
+        input_queue.put(keypress)

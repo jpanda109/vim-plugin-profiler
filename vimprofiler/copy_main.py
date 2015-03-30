@@ -1,27 +1,22 @@
-import curses
-import sys
 import subprocess
 import os
+import sys
 import tempfile
-import argparse
 import threading
 import queue
-import src.wrappers as wrappers
+import argparse
 import src.tasks as tasks
 
 
 def parse_args():
-    """ parse command line arguments """
     parser = argparse.ArgumentParser(description='Run vim in a sandbox')
     parser.add_argument('files', metavar='F', type=str, nargs='*',
                         help='files to be edited with vim')
     return parser.parse_args()
 
 
-@wrappers.safe_exc
-def main(screen):
-    """ main curses screen logic; I think everything before with open(pipe_name)
-    can actuall be moved elsewhere for code prettyness"""
+if __name__ == '__main__':
+
     args = parse_args()
 
     # file initializations relative to working paths
@@ -35,13 +30,13 @@ def main(screen):
         pass
 
     with tempfile.TemporaryDirectory() as tmpdir:
+
         # lay em with the pipe
         pipe_name = os.path.join(tmpdir, 'tmpfifo')
         os.mkfifo(pipe_name)
         os.environ['VIMUALIZER_PIPE_NAME'] = pipe_name
 
-        # create the vim command that opens up vim instance in new terminal
-        # with proper settings, etc.
+        # create the vim command to be sent to seperate terminal
         vim_command = ('vim --startuptime %r -S %r -c %r' %
                        (startup_file, plugin_file, 'call AutoLogInfo()'))
         files_string = ' '
@@ -49,10 +44,8 @@ def main(screen):
             files_string += f
         vim_command += files_string
 
-        # send command to open up new process, wait for command process to die
-        # before getting the pid of the actual vim process (this is like a
-        # super jank way of doing it but oh well (no i'm not closing these
-        # parentheses
+        # open new process, wait for command process to die before getting pid
+        # of the vim process itself (using pgrep ayy)
         args = ['gnome-terminal', '-e', vim_command]
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)
@@ -60,46 +53,30 @@ def main(screen):
                                     stdout=subprocess.PIPE)
                    .stdout.read().decode('utf-8').rstrip())
 
-        # initialize threads
+        # start threads
         input_queue = queue.Queue()
         input_thread = threading.Thread(target=tasks.process_input,
-                                        args=(input_queue, screen),
-                                        daemon=True)
+                                        args=(input_queue,), daemon=True)
         input_thread.start()
 
-        # main program logic and curses manipulation starts here
+        # main loop, process info etc
         with open(pipe_name, 'r') as pipe:
             while True:
 
-                # deal with user input (there should be a way to just block
-                # until input right?
+                # deal with user input
                 if not input_queue.empty():
                     keypress = input_queue.get()
-                    if keypress == 'q' or keypress == 'Q':
+                    if keypress == 'Q':
                         os.kill(proc, 9)
                         sys.exit()
+                    elif keypress == 'q':
+                        os.kill(proc, 9)
 
-                # deal with information received from pipe
+                # deal with info received through pipe
                 line = pipe.readline()
                 if line.rstrip() != '':
-                    screen.addstr(30, 30, line)
-                    screen.refresh()
-
-                # just see if the vim process is still alive
+                    print(line)
                 try:
                     os.kill(proc, 0)
                 except OSError:
                     break
-
-
-if __name__ == "__main__":
-    myscreen = curses.initscr()
-    curses.noecho()
-
-    exc = main(myscreen)
-
-    curses.echo()
-    curses.endwin()
-
-    if exc is not None:
-        print(exc)

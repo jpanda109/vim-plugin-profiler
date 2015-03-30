@@ -1,7 +1,7 @@
 import curses
 import threading
 import queue
-import sys
+import traceback
 from functools import wraps
 
 
@@ -11,7 +11,9 @@ def safe_curses(f):
         try:
             f(*args, **kwargs)
         except:
-            pass
+            return traceback.format_exc()
+        else:
+            return None
     return wrapper
 
 
@@ -36,6 +38,8 @@ def main(screen):
             keypress = input_queue.get()
             if keypress == 'q' or keypress == 'Q':
                 break
+            elif keypress == 'e':
+                raise RuntimeError
             screen.addstr(30, 30, keypress)
 
 
@@ -43,7 +47,10 @@ if __name__ == "__main__":
     myscreen = curses.initscr()
     curses.noecho()
 
-    main(myscreen)
+    exc = main(myscreen)
 
     curses.echo()
     curses.endwin()
+
+    if exc is not None:
+        print(exc)

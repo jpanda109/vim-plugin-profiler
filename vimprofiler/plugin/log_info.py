@@ -10,4 +10,5 @@ with open(pipename, 'w') as pipe:
         'time': time.time(),
         'command': command,
     }
-    data_string = json.dump(data, pipe)
+    data_string = json.dumps(data, pipe) + '\n'
+    pipe.write(data_string)

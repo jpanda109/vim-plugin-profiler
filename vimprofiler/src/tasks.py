@@ -1,6 +1,7 @@
 import os
 import time
 import collections
+import json
 
 
 HERTZ = 250
@@ -64,9 +65,21 @@ def calculate_cpu(interval, screen, lock):
         time_prev = time_next
 
 
-def display_commands(pipe_name, screen, lock):
+def display_commands(pipe_name, screen, screen_lock):
     y, x = screen.getmaxyx()
     command_deque = collections.deque(maxlen=y-2)
     while True:
-        with (open(pipe_name, 'r') as pipe:
-                pass
+        with open(pipe_name, 'r') as pipe:
+            line = pipe.readline()
+            while line.rstrip() != '':
+                dict_list = line.split('\n')
+                dict_list = list(filter(lambda x: x != '', dict_list))
+                command_list = [json.loads(d, encoding='utf-8') for d in dict_list]
+                for command in command_list:
+                    if command != '':
+                        command_deque.append(command)
+                line = pipe.readline()
+        with screen_lock:
+            for i, command in enumerate(command_deque):
+                screen.addstr(i, 0, str(command))
+            screen.refresh()

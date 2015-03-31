@@ -6,8 +6,6 @@ import tempfile
 import argparse
 import threading
 import queue
-import json
-import collections
 import src.wrappers as wrappers
 import src.tasks as tasks
 
@@ -73,36 +71,23 @@ def main(screen):
                                       args=(1, screen, screen_lock),
                                       daemon=True)
         cpu_thread.start()
+        command_thread = threading.Thread(target=tasks.display_commands,
+                                          args=(pipe_name, screen,
+                                                screen_lock),
+                                          daemon=True)
+        command_thread.start()
 
         # main program logic and curses manipulation starts here
-        with open(pipe_name, 'r') as pipe:
-            y, x = screen.getmaxyx()
-            command_deque = collections.deque(maxlen=y-2)
-            while True:
-
-                # deal with user input (there should be a way to just block
-                # until input right?
-                if not input_queue.empty():
-                    keypress = input_queue.get()
-                    if keypress == 'q' or keypress == 'Q':
-                        os.kill(proc, 9)
-                        sys.exit()
-
-                # deal with information received from pipe
-                line = pipe.readline()
-                if line.rstrip() != '':
-                    line = json.loads(line, encoding='utf-8')
-                    command_deque.append(line)
-                    with screen_lock:
-                        for i, command in enumerate(command_deque):
-                            screen.addstr(i, 0, str(command))
-                        screen.refresh()
-
-                # just see if the vim process is still alive
-                try:
-                    os.kill(proc, 0)
-                except OSError:
-                    break
+        while True:
+            if not input_queue.empty():
+                keypress = input_queue.get()
+                if keypress == 'q' or keypress == 'Q':
+                    os.kill(proc, 9)
+                    sys.exit()
+            try:
+                os.kill(proc, 0)
+            except OSError:
+                break
 
 
 if __name__ == "__main__":

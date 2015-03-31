@@ -67,6 +67,10 @@ def main(screen):
                                         args=(input_queue, screen),
                                         daemon=True)
         input_thread.start()
+        cpu_queue = queue.Queue()
+        cpu_thread = threading.Thread(target=tasks.calculate_cpu,
+                                      args=(cpu_queue, 5), daemon=True)
+        cpu_thread.start()
 
         # main program logic and curses manipulation starts here
         with open(pipe_name, 'r') as pipe:
@@ -79,6 +83,10 @@ def main(screen):
                     if keypress == 'q' or keypress == 'Q':
                         os.kill(proc, 9)
                         sys.exit()
+                if not cpu_queue.empty():
+                    cpu, cur_time = cpu_queue.get()
+                    screen.addstr(1, 0, str(cpu))
+                    screen.refresh()
 
                 # deal with information received from pipe
                 line = pipe.readline()

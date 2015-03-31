@@ -6,6 +6,7 @@ import tempfile
 import argparse
 import threading
 import queue
+import json
 import src.wrappers as wrappers
 import src.tasks as tasks
 
@@ -82,7 +83,8 @@ def main(screen):
                 # deal with information received from pipe
                 line = pipe.readline()
                 if line.rstrip() != '':
-                    screen.addstr(30, 30, line)
+                    line = json.loads(line, encoding='utf-8')
+                    screen.addstr(30, 30, str(line))
                     screen.refresh()
 
                 # just see if the vim process is still alive

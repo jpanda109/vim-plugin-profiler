@@ -7,6 +7,7 @@ import argparse
 import threading
 import queue
 import json
+import collections
 import src.wrappers as wrappers
 import src.tasks as tasks
 
@@ -74,6 +75,8 @@ def main(screen):
 
         # main program logic and curses manipulation starts here
         with open(pipe_name, 'r') as pipe:
+            y, x = screen.getmaxyx()
+            command_deque = collections.deque(maxlen=y-2)
             while True:
 
                 # deal with user input (there should be a way to just block
@@ -83,6 +86,8 @@ def main(screen):
                     if keypress == 'q' or keypress == 'Q':
                         os.kill(proc, 9)
                         sys.exit()
+
+                # deal with cpu utilization calculations
                 if not cpu_queue.empty():
                     cpu, cur_time = cpu_queue.get()
                     screen.addstr(1, 0, str(cpu))
@@ -92,7 +97,9 @@ def main(screen):
                 line = pipe.readline()
                 if line.rstrip() != '':
                     line = json.loads(line, encoding='utf-8')
-                    screen.addstr(0, 0, str(line))
+                    command_deque.append(line)
+                    for i, command in enumerate(command_deque):
+                        screen.addstr(i, 0, str(command))
                     screen.refresh()
 
                 # just see if the vim process is still alive

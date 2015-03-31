@@ -2,6 +2,7 @@ import os
 import time
 import collections
 import json
+import sqlite3
 
 
 HERTZ = 250
@@ -66,20 +67,33 @@ def calculate_cpu(interval, screen, lock):
 
 
 def display_commands(pipe_name, screen, screen_lock):
+    try:
+        os.remove('commands.db')
+    except OSError:
+        pass
+    conn = sqlite3.connect('commands.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE commands
+                 (time, command)''')
     y, x = screen.getmaxyx()
     command_deque = collections.deque(maxlen=y-2)
     while True:
         with open(pipe_name, 'r') as pipe:
             line = pipe.readline()
+            command_list = []
             while line.rstrip() != '':
                 dict_list = line.split('\n')
                 dict_list = list(filter(lambda x: x != '', dict_list))
-                command_list = [json.loads(d, encoding='utf-8') for d in dict_list]
-                for command in command_list:
-                    if command != '':
-                        command_deque.append(command)
+                command_list += ([json.loads(d, encoding='utf-8')
+                                 for d in dict_list])
                 line = pipe.readline()
+            # sort in case obj's come in pipe in wrong order
+            command_list.sort(key=lambda x: x['time'])
+            for command in command_list:
+                command_deque.append(command)
         with screen_lock:
             for i, command in enumerate(command_deque):
                 screen.addstr(i, 0, str(command))
             screen.refresh()
+    conn.commit()
+    conn.close()

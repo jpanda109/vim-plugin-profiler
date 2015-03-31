@@ -8,7 +8,8 @@ pipename = os.environ['VIMUALIZER_PIPE_NAME']
 with open(pipename, 'w') as pipe:
     data = {
         'time': time.time(),
-        'command': command
+        'command': command,
+        'pid': os.getpid()
     }
     data_string = json.dump(data, pipe)
     # pipe.write(data_string)

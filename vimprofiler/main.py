@@ -62,15 +62,16 @@ def main(screen):
                                     stdout=subprocess.PIPE)
                    .stdout.read().decode('utf-8').rstrip())
 
-        # initialize threads
+        # initialize threads and locks
+        screen_lock = threading.Lock()
         input_queue = queue.Queue()
         input_thread = threading.Thread(target=tasks.process_input,
                                         args=(input_queue, screen),
                                         daemon=True)
         input_thread.start()
-        cpu_queue = queue.Queue()
         cpu_thread = threading.Thread(target=tasks.calculate_cpu,
-                                      args=(cpu_queue, 5), daemon=True)
+                                      args=(1, screen, screen_lock),
+                                      daemon=True)
         cpu_thread.start()
 
         # main program logic and curses manipulation starts here
@@ -87,20 +88,15 @@ def main(screen):
                         os.kill(proc, 9)
                         sys.exit()
 
-                # deal with cpu utilization calculations
-                if not cpu_queue.empty():
-                    cpu, cur_time = cpu_queue.get()
-                    screen.addstr(1, 0, str(cpu))
-                    screen.refresh()
-
                 # deal with information received from pipe
                 line = pipe.readline()
                 if line.rstrip() != '':
                     line = json.loads(line, encoding='utf-8')
                     command_deque.append(line)
-                    for i, command in enumerate(command_deque):
-                        screen.addstr(i, 0, str(command))
-                    screen.refresh()
+                    with screen_lock:
+                        for i, command in enumerate(command_deque):
+                            screen.addstr(i, 0, str(command))
+                        screen.refresh()
 
                 # just see if the vim process is still alive
                 try:

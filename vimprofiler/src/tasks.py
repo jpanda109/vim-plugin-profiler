@@ -1,5 +1,6 @@
 import os
 import time
+import collections
 
 
 HERTZ = 250
@@ -11,7 +12,9 @@ def process_input(input_queue, screen):
         input_queue.put(keypress)
 
 
-def calculate_cpu(cpu_queue, interval):
+def calculate_cpu(interval, screen, lock):
+    y, x = screen.getmaxyx()
+    cpu_queue = collections.deque(maxlen=y-2)
     proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
     time_file_name = '/proc/stat'
     utime_prev = 0
@@ -44,7 +47,13 @@ def calculate_cpu(cpu_queue, interval):
         total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
         total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
         cpu_usage = 100 * ((total_time / HERTZ) / seconds)
-        cpu_queue.put((cpu_usage, time.time()))
+        cpu_queue.append(cpu_usage)
+        # cpu_queue.put((cpu_usage, time.time()))
+
+        with lock:
+            for i, cpu in enumerate(cpu_queue):
+                screen.addstr(i, 70, str(cpu))
+                screen.refresh()
 
         time.sleep(interval)
 

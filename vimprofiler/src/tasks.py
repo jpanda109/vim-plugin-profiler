@@ -53,7 +53,7 @@ def calculate_cpu(interval, screen, lock):
         with lock:
             for i, cpu in enumerate(cpu_queue):
                 screen.addstr(i, 70, str(cpu))
-                screen.refresh()
+            screen.refresh()
 
         time.sleep(interval)
 
@@ -62,3 +62,11 @@ def calculate_cpu(interval, screen, lock):
         cutime_prev = cutime_next
         cstime_prev = cstime_next
         time_prev = time_next
+
+
+def display_commands(pipe_name, screen, lock):
+    y, x = screen.getmaxyx()
+    command_deque = collections.deque(maxlen=y-2)
+    while True:
+        with (open(pipe_name, 'r') as pipe:
+                pass

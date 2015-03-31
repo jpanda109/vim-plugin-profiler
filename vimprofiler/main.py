@@ -84,7 +84,7 @@ def main(screen):
                 line = pipe.readline()
                 if line.rstrip() != '':
                     line = json.loads(line, encoding='utf-8')
-                    screen.addstr(30, 30, str(line))
+                    screen.addstr(0, 0, str(line))
                     screen.refresh()
 
                 # just see if the vim process is still alive

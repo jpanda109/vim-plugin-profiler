@@ -8,6 +8,7 @@ import queue
 import logging
 import src.wrappers as wrappers
 import src.tasks as tasks
+import src.app as app
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
@@ -118,14 +119,15 @@ def handle_input(keypress, exit_event):
 
 
 if __name__ == "__main__":
-    os.environ['cur_working_path'] = os.path.dirname(os.path.abspath(__file__))
+    working_path = os.path.dirname(os.path.abspath(__file__))
     myscreen = curses.initscr()
     myscreen.nodelay(1)
     try:
         curses.noecho()
         curses.curs_set(0)
 
-        exc = main(myscreen)
+        exc = app.main(myscreen, working_path)
+        # exc = main(myscreen)
     finally:
         curses.echo()
         curses.endwin()

@@ -8,8 +8,8 @@ import queue
 import subprocess
 
 # user-defined imports
-import wrappers
-import tasks
+import src.wrappers as wrappers
+import src.tasks as tasks
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
@@ -24,14 +24,14 @@ def parse_args():
 
 
 @wrappers.safe_exc
-def main(screen):
+def main(screen, working_path):
     """ main curses screen logic; I think everything before with open(pipe_name)
     can actuall be moved elsewhere for code prettyness"""
     args = parse_args()
 
     # file initializations relative to working paths
     # working_path = os.path.dirname(os.path.abspath(__file__))
-    working_path = os.environ['cur_working_path']
+    # working_path = os.environ['cur_working_path']
     startup_file = os.path.join(working_path, 'vimprofile-startuptime.log')
     plugin_file = os.path.join(working_path, 'plugin.vim')
 

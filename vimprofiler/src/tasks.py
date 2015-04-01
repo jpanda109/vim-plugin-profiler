@@ -22,9 +22,7 @@ def process_input(input_queue, screen, exit_event):
             pass
 
 
-def calculate_cpu(interval, screen, lock, exit_event):
-    y, x = screen.getmaxyx()
-    cpu_queue = collections.deque(maxlen=y-2)
+def calculate_cpu(interval, display_queue, exit_event):
     proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
     time_file_name = '/proc/stat'
     utime_prev = 0
@@ -57,13 +55,7 @@ def calculate_cpu(interval, screen, lock, exit_event):
         total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
         total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
         cpu_usage = 100 * ((total_time / HERTZ) / seconds)
-        cpu_queue.append(cpu_usage)
-        # cpu_queue.put((cpu_usage, time.time()))
-
-        with lock:
-            for i, cpu in enumerate(cpu_queue):
-                screen.addstr(i, 70, str(cpu))
-            screen.refresh()
+        display_queue.put(cpu_usage)
 
         time.sleep(interval)
 
@@ -74,35 +66,32 @@ def calculate_cpu(interval, screen, lock, exit_event):
         time_prev = time_next
 
 
-def display_commands(pipe_name, screen, screen_lock, exit_event):
+def display_commands(display_queue, screen, exit_event):
+    y, x = screen.getmaxyx()
+    display_deque = collections.deque(maxlen=y-2)
+    while not exit_event.is_set():
+        if not display_queue.empty():
+            display_deque.append(display_queue.get())
+            curses.setsyx(0, 0)
+            for i, item in enumerate(display_deque):
+                screen.clrtoeol()
+                screen.addstr(i, 0, str(item)[:x-2])
+                screen.noutrefresh()
+            curses.doupdate()
+
+
+def load_commands(pipe_name, display_queue, exit_event):
     conn = sqlite3.connect('commands.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE commands
                  (time, command)''')
-    y, x = screen.getmaxyx()
-    command_deque = collections.deque(maxlen=y-2)
     with open(pipe_name, 'r') as pipe:
         while not exit_event.is_set():
             line = pipe.readline()
             if line.rstrip() == '':
-                next
-            command_list = []
-            while line.rstrip() != '':
-                dict_list = line.split('\n')
-                dict_list = list(filter(lambda x: x != '', dict_list))
-                command_list += ([json.loads(d, encoding='utf-8')
-                                 for d in dict_list])
-                line = pipe.readline()
-            # sort in case obj's come in pipe in wrong order
-            command_list.sort(key=lambda x: x['time'])
-            c.executemany('INSERT INTO commands VALUES (?,?)',
-                          [(v['time'], v['command']) for v in command_list])
-            for command in command_list:
-                command_deque.append(command)
+                continue
+            command = json.loads(line, encoding='utf-8')
 
-            with screen_lock:
-                for i, command in enumerate(command_deque):
-                    screen.addstr(i, 0, str(command))
-                screen.refresh()
+            display_queue.put(command)
     conn.commit()
     conn.close()

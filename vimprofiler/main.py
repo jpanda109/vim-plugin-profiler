@@ -1,5 +1,4 @@
 import curses
-import sys
 import subprocess
 import os
 import tempfile
@@ -18,7 +17,6 @@ def parse_args():
     return parser.parse_args()
 
 
-@wrappers.safe_exc
 def main(screen):
     """ main curses screen logic; I think everything before with open(pipe_name)
     can actuall be moved elsewhere for code prettyness"""
@@ -60,20 +58,23 @@ def main(screen):
                                     stdout=subprocess.PIPE)
                    .stdout.read().decode('utf-8').rstrip())
 
-        # initialize threads and locks, etc
+        # initialize threads and synchronization items
         threads = []
         exit_event = threading.Event()
-        screen_lock = threading.Lock()
+        display_queue = queue.Queue()
         input_queue = queue.Queue()
         threads.append(threading.Thread(target=tasks.process_input,
                                         args=(input_queue, screen, exit_event),
                                         daemon=True))
         threads.append(threading.Thread(target=tasks.calculate_cpu,
-                                        args=(1, screen, screen_lock,
+                                        args=(.2, display_queue, exit_event),
+                                        daemon=True))
+        threads.append(threading.Thread(target=tasks.load_commands,
+                                        args=(pipe_name, display_queue,
                                               exit_event),
                                         daemon=True))
         threads.append(threading.Thread(target=tasks.display_commands,
-                                        args=(pipe_name, screen, screen_lock,
+                                        args=(display_queue, screen,
                                               exit_event),
                                         daemon=True))
         for thread in threads:
@@ -83,27 +84,42 @@ def main(screen):
         while True:
             if not input_queue.empty():
                 keypress = input_queue.get()
+                handle_input(keypress, exit_event)
+                """
                 if keypress == 'q' or keypress == 'Q':
                     exit_event.set()
                     for thread in threads:
                         thread.join()
                     os.kill(proc, 9)
-                    sys.exit()
-            try:
-                os.kill(proc, 0)
-            except OSError:
-                break
+                    break
+                """
+        exit_program(threads, proc)
+
+
+def exit_program(threads, proc):
+    for thread in threads:
+        thread.join()
+    try:
+        os.kill(proc, 9)
+    except OSError:
+        pass
+
+
+def handle_input(keypress, exit_event):
+    if keypress == 'q' or keypress == 'Q':
+        exit_event.set()
 
 
 if __name__ == "__main__":
     myscreen = curses.initscr()
-    curses.noecho()
-    myscreen.nodelay(1)
+    try:
+        curses.noecho()
+        myscreen.nodelay(1)
 
-    exc = main(myscreen)
-
-    curses.echo()
-    curses.endwin()
+        exc = main(myscreen)
+    finally:
+        curses.echo()
+        curses.endwin()
 
     if exc is not None:
         print(exc)

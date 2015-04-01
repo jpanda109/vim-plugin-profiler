@@ -60,28 +60,33 @@ def main(screen):
                                     stdout=subprocess.PIPE)
                    .stdout.read().decode('utf-8').rstrip())
 
-        # initialize threads and locks
+        # initialize threads and locks, etc
+        threads = []
+        exit_event = threading.Event()
         screen_lock = threading.Lock()
         input_queue = queue.Queue()
-        input_thread = threading.Thread(target=tasks.process_input,
-                                        args=(input_queue, screen),
-                                        daemon=True)
-        input_thread.start()
-        cpu_thread = threading.Thread(target=tasks.calculate_cpu,
-                                      args=(1, screen, screen_lock),
-                                      daemon=True)
-        cpu_thread.start()
-        command_thread = threading.Thread(target=tasks.display_commands,
-                                          args=(pipe_name, screen,
-                                                screen_lock),
-                                          daemon=True)
-        command_thread.start()
+        threads.append(threading.Thread(target=tasks.process_input,
+                                        args=(input_queue, screen, exit_event),
+                                        daemon=True))
+        threads.append(threading.Thread(target=tasks.calculate_cpu,
+                                        args=(1, screen, screen_lock,
+                                              exit_event),
+                                        daemon=True))
+        threads.append(threading.Thread(target=tasks.display_commands,
+                                        args=(pipe_name, screen, screen_lock,
+                                              exit_event),
+                                        daemon=True))
+        for thread in threads:
+            thread.start()
 
         # main program logic and curses manipulation starts here
         while True:
             if not input_queue.empty():
                 keypress = input_queue.get()
                 if keypress == 'q' or keypress == 'Q':
+                    exit_event.set()
+                    for thread in threads:
+                        thread.join()
                     os.kill(proc, 9)
                     sys.exit()
             try:
@@ -93,6 +98,7 @@ def main(screen):
 if __name__ == "__main__":
     myscreen = curses.initscr()
     curses.noecho()
+    myscreen.nodelay(1)
 
     exc = main(myscreen)
 

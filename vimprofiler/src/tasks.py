@@ -3,18 +3,26 @@ import time
 import collections
 import json
 import sqlite3
+import curses
 
 
 HERTZ = 250
+try:
+    os.remove('commands.db')
+except OSError:
+    pass
 
 
-def process_input(input_queue, screen):
-    while True:
-        keypress = screen.getkey()
-        input_queue.put(keypress)
+def process_input(input_queue, screen, exit_event):
+    while not exit_event.is_set():
+        try:
+            keypress = screen.getkey()
+            input_queue.put(keypress)
+        except curses.error:
+            pass
 
 
-def calculate_cpu(interval, screen, lock):
+def calculate_cpu(interval, screen, lock, exit_event):
     y, x = screen.getmaxyx()
     cpu_queue = collections.deque(maxlen=y-2)
     proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
@@ -33,7 +41,7 @@ def calculate_cpu(interval, screen, lock):
         time_stats = time_file.readline().split(' ')[2:]
     time_prev = sum(map(float, time_stats))
     time.sleep(interval)
-    while True:
+    while not exit_event.is_set():
         with open(proc_file_name, 'r') as proc_file:
             stats = proc_file.readline().split(' ')
         with open(time_file_name, 'r') as time_file:
@@ -66,20 +74,18 @@ def calculate_cpu(interval, screen, lock):
         time_prev = time_next
 
 
-def display_commands(pipe_name, screen, screen_lock):
-    try:
-        os.remove('commands.db')
-    except OSError:
-        pass
+def display_commands(pipe_name, screen, screen_lock, exit_event):
     conn = sqlite3.connect('commands.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE commands
                  (time, command)''')
     y, x = screen.getmaxyx()
     command_deque = collections.deque(maxlen=y-2)
-    while True:
-        with open(pipe_name, 'r') as pipe:
+    with open(pipe_name, 'r') as pipe:
+        while not exit_event.is_set():
             line = pipe.readline()
+            if line.rstrip() == '':
+                next
             command_list = []
             while line.rstrip() != '':
                 dict_list = line.split('\n')
@@ -89,11 +95,14 @@ def display_commands(pipe_name, screen, screen_lock):
                 line = pipe.readline()
             # sort in case obj's come in pipe in wrong order
             command_list.sort(key=lambda x: x['time'])
+            c.executemany('INSERT INTO commands VALUES (?,?)',
+                          [(v['time'], v['command']) for v in command_list])
             for command in command_list:
                 command_deque.append(command)
-        with screen_lock:
-            for i, command in enumerate(command_deque):
-                screen.addstr(i, 0, str(command))
-            screen.refresh()
+
+            with screen_lock:
+                for i, command in enumerate(command_deque):
+                    screen.addstr(i, 0, str(command))
+                screen.refresh()
     conn.commit()
     conn.close()

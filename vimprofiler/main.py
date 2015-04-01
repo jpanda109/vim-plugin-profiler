@@ -5,8 +5,12 @@ import tempfile
 import argparse
 import threading
 import queue
+import logging
 import src.wrappers as wrappers
 import src.tasks as tasks
+
+
+logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
 def parse_args():
@@ -17,6 +21,7 @@ def parse_args():
     return parser.parse_args()
 
 
+@wrappers.safe_exc
 def main(screen):
     """ main curses screen logic; I think everything before with open(pipe_name)
     can actuall be moved elsewhere for code prettyness"""
@@ -83,6 +88,7 @@ def main(screen):
         # main program logic and curses manipulation starts here
         while True:
             if not input_queue.empty():
+                logging.debug('check_input_queue')
                 keypress = input_queue.get()
                 handle_input(keypress, exit_event)
                 """
@@ -98,6 +104,7 @@ def main(screen):
 
 def exit_program(threads, proc):
     for thread in threads:
+        logging.debug('thread')
         thread.join()
     try:
         os.kill(proc, 9)
@@ -114,7 +121,6 @@ if __name__ == "__main__":
     myscreen = curses.initscr()
     try:
         curses.noecho()
-        myscreen.nodelay(1)
 
         exc = main(myscreen)
     finally:

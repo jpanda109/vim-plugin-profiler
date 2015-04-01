@@ -62,9 +62,11 @@ def main(screen, working_path):
         args = ['gnome-terminal', '-e', vim_command]
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)
-        proc = int(subprocess.Popen(['pgrep', '-f', vim_command[:10]],
-                                    stdout=subprocess.PIPE)
-                   .stdout.read().decode('utf-8').rstrip())
+        proc = (subprocess.Popen(['pgrep', '-f', vim_command[:10]],
+                                 stdout=subprocess.PIPE)
+                          .stdout.read().decode('utf-8').rstrip())
+        logging.debug(proc)
+        proc = int(proc)
 
         # initialize threads and synchronization items
         threads = []
@@ -102,13 +104,19 @@ def main(screen, working_path):
                     os.kill(proc, 9)
                     break
                 """
-        exit_program(threads, proc)
+        exit_program(threads, proc, screen)
 
 
-def exit_program(threads, proc):
+def exit_program(threads, proc, screen):
+    screen.clear()
+    screen.addstr(0, 0, 'cleaning up')
+    screen.refresh()
     for thread in threads:
         logging.debug('thread')
         thread.join()
+        screen.clear()
+        screen.addstr(0, 0, 'cleaning up')
+        screen.refresh()
     try:
         os.kill(proc, 9)
     except OSError:

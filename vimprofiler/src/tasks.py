@@ -96,7 +96,8 @@ def load_commands(pipe_name, display_queue, exit_event):
             if line.rstrip() == '':
                 continue
             command = json.loads(line, encoding='utf-8')
-
             display_queue.put(command)
+            c.execute('INSERT INTO commands VALUES (?,?)',
+                      (command['time'], command['command']))
     conn.commit()
     conn.close()

@@ -86,7 +86,7 @@ def main(screen):
             thread.start()
 
         # main program logic and curses manipulation starts here
-        while True:
+        while not exit_event.is_set():
             if not input_queue.empty():
                 logging.debug('check_input_queue')
                 keypress = input_queue.get()

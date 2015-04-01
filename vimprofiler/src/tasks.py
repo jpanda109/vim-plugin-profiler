@@ -4,6 +4,10 @@ import collections
 import json
 import sqlite3
 import curses
+import logging
+
+
+logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
 HERTZ = 250
@@ -15,11 +19,9 @@ except OSError:
 
 def process_input(input_queue, screen, exit_event):
     while not exit_event.is_set():
-        try:
-            keypress = screen.getkey()
-            input_queue.put(keypress)
-        except curses.error:
-            pass
+        keypress = screen.getkey()
+        logging.debug(keypress)
+        input_queue.put(keypress)
 
 
 def calculate_cpu(interval, display_queue, exit_event):

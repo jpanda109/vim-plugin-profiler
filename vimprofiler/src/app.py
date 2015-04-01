@@ -1,13 +1,15 @@
-import curses
-import subprocess
-import os
-import tempfile
+# STL imports
 import argparse
+import os
+import logging
+import tempfile
 import threading
 import queue
-import logging
-import src.wrappers as wrappers
-import src.tasks as tasks
+import subprocess
+
+# user-defined imports
+import wrappers
+import tasks
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
@@ -28,7 +30,8 @@ def main(screen):
     args = parse_args()
 
     # file initializations relative to working paths
-    working_path = os.path.dirname(os.path.abspath(__file__))
+    # working_path = os.path.dirname(os.path.abspath(__file__))
+    working_path = os.environ['cur_working_path']
     startup_file = os.path.join(working_path, 'vimprofile-startuptime.log')
     plugin_file = os.path.join(working_path, 'plugin.vim')
 
@@ -115,20 +118,3 @@ def exit_program(threads, proc):
 def handle_input(keypress, exit_event):
     if keypress == 'q' or keypress == 'Q':
         exit_event.set()
-
-
-if __name__ == "__main__":
-    os.environ['cur_working_path'] = os.path.dirname(os.path.abspath(__file__))
-    myscreen = curses.initscr()
-    myscreen.nodelay(1)
-    try:
-        curses.noecho()
-        curses.curs_set(0)
-
-        exc = main(myscreen)
-    finally:
-        curses.echo()
-        curses.endwin()
-
-    if exc is not None:
-        print(exc)

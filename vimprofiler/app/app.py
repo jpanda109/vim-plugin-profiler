@@ -75,7 +75,7 @@ def main(screen, working_path):
                                         args=(input_queue, screen, exit_event),
                                         daemon=True))
         threads.append(threading.Thread(target=tasks.calculate_cpu,
-                                        args=(.2, display_queue, exit_event),
+                                        args=(1, display_queue, exit_event),
                                         daemon=True))
         threads.append(threading.Thread(target=tasks.load_commands,
                                         args=(pipe_name, display_queue,

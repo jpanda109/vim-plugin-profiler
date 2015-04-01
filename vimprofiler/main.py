@@ -1,6 +1,6 @@
 import curses
 import os
-import src.app as app
+import app.app as app
 
 
 if __name__ == "__main__":

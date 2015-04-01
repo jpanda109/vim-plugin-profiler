@@ -41,7 +41,7 @@ def main(screen):
             elif keypress == 'e':
                 raise RuntimeError
             screen.addstr(30, 30, keypress)
-
+            screen.refresh()
 
 if __name__ == "__main__":
     myscreen = curses.initscr()

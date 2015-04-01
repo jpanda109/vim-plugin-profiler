@@ -19,9 +19,12 @@ except OSError:
 
 def process_input(input_queue, screen, exit_event):
     while not exit_event.is_set():
-        keypress = screen.getkey()
-        logging.debug(keypress)
-        input_queue.put(keypress)
+        try:
+            keypress = screen.getkey()
+            logging.debug(keypress)
+            input_queue.put(keypress)
+        except curses.error:
+            pass
 
 
 def calculate_cpu(interval, display_queue, exit_event):

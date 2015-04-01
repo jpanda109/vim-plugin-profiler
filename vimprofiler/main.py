@@ -119,6 +119,7 @@ def handle_input(keypress, exit_event):
 
 if __name__ == "__main__":
     myscreen = curses.initscr()
+    myscreen.nodelay(1)
     try:
         curses.noecho()
 

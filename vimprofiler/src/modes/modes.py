@@ -1,5 +1,3 @@
-# STL imports
-import argparse
 import os
 import logging
 import tempfile
@@ -7,38 +5,19 @@ import threading
 import queue
 import subprocess
 
-# user-defined imports
 import src.wrappers as wrappers
 import src.tasks as tasks
-
-
-logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
-
-
-def parse_args():
-    """ parse command line arguments """
-    parser = argparse.ArgumentParser(description='Run vim in a sandbox')
-    parser.add_argument('files', metavar='F', type=str, nargs='*',
-                        help='files to be edited with vim')
-    return parser.parse_args()
 
 
 @wrappers.safe_exc
 def main(screen, working_path):
     """ main curses screen logic; I think everything before with open(pipe_name)
     can actuall be moved elsewhere for code prettyness"""
-    args = parse_args()
 
     # file initializations relative to working paths
     # working_path = os.path.dirname(os.path.abspath(__file__))
     # working_path = os.environ['cur_working_path']
-    startup_file = os.path.join(working_path, 'vimprofile-startuptime.log')
     plugin_file = os.path.join(working_path, 'plugin.vim')
-
-    try:
-        os.remove(startup_file)
-    except FileNotFoundError:
-        pass
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # lay em with the pipe
@@ -48,12 +27,7 @@ def main(screen, working_path):
 
         # create the vim command that opens up vim instance in new terminal
         # with proper settings, etc.
-        vim_command = ('vim --startuptime %r -S %r -c %r' %
-                       (startup_file, plugin_file, 'call AutoLogInfo()'))
-        files_string = ' '
-        for f in args.files:
-            files_string += f
-        vim_command += files_string
+        vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
 
         # send command to open up new process, wait for command process to die
         # before getting the pid of the actual vim process (this is like a
@@ -104,10 +78,10 @@ def main(screen, working_path):
                     os.kill(proc, 9)
                     break
                 """
-        exit_program(threads, proc, screen)
+        exit_mode(threads, proc, screen)
 
 
-def exit_program(threads, proc, screen):
+def exit_mode(threads, proc, screen):
     screen.clear()
     screen.addstr(0, 0, 'cleaning up')
     screen.refresh()

@@ -1,2 +1,4 @@
 please run this crap using the command $python3 -m main
 why? because relative paths, that's why
+
+UPDATE -- JK, can just run python3 main.py as usual now

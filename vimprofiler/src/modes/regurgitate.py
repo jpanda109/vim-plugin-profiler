@@ -1,6 +1,5 @@
 import os
 import logging
-import tempfile
 import threading
 import queue
 import subprocess
@@ -45,15 +44,9 @@ class RegurgitateMode(object):
         proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
         time_file_name = '/proc/stat'
         utime_prev = 0
-        utime_next = 0
         stime_prev = 0
-        stime_next = 0
         cutime_prev = 0
-        cutime_next = 0
         cstime_prev = 0
-        cstime_next = 0
-        time_prev = 0
-        time_next = 0
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
@@ -74,8 +67,8 @@ class RegurgitateMode(object):
             total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
             total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
             cpu_usage = 100 * ((total_time / HERTZ) / seconds)
-            self.display_queue.put(cpu_usage)
 
+            self.display_queue.put(cpu_usage)
             time.sleep(self.interval)
 
             utime_prev = utime_next

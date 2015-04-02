@@ -34,45 +34,8 @@ class RegurgitateMode(object):
         self.interval = 1
         self.display_queue = queue.Queue()
         self.pipe_name = os.path.join(self.working_path, 'tmpfifo')
-        self.proc = 0
+        self.proc = self.initialize_vim(self.working_path, self.pipe_name)
         self.threads = []
-
-        y, x = screen.getmaxyx()
-
-        # display mode specific commands on line y - 2
-        commands = ['a: Analyze', 'o: Open']
-        for i in range(len(commands)):
-            col = 0 if i == 0 else len(commands[i - 1]) + 4
-            self.screen.addstr(y - 2, col, commands[i])
-
-        # file initializations relative to working paths
-        plugin_file = os.path.join(self.working_path, 'plugin.vim')
-
-        # lay em with the pipe
-        os.mkfifo(self.pipe_name)
-
-        # create the vim command that opens up vim instance in new terminal
-        # with proper settings, etc.
-        vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
-
-        # send command to open up new process, wait for command process to die
-        # before getting the pid of the actual vim process (this is like a
-        # super jank way of doing it but oh well (no i'm not closing these
-        # parentheses
-        args = [env_command[desktop_env], '-e', vim_command]
-        proc = subprocess.Popen(args).pid
-        os.waitid(os.P_PID, int(proc), os.WEXITED)
-        while True:
-            try:
-                logging.debug(vim_command)
-                proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
-                                         stdout=subprocess.PIPE)
-                                  .stdout.read().decode('utf-8').rstrip())
-                logging.debug(proc)
-                self.proc = int(proc)
-                break
-            except:
-                pass
 
     def _calculate_cpu(self):
 
@@ -213,6 +176,13 @@ class RegurgitateMode(object):
         :return the mode that should be switched to
         """
 
+        # display mode specific commands on line y - 2
+        y, x = self.screen.getmaxyx()
+        commands = ['a: Analyze', 'o: Open']
+        for i in range(len(commands)):
+            col = 0 if i == 0 else len(commands[i - 1]) + 4
+            self.screen.addstr(y - 2, col, commands[i])
+
         # initialize threads and synchronization items
         self.threads.append(threading.Thread(target=self._process_input,
                                              daemon=True))
@@ -229,3 +199,35 @@ class RegurgitateMode(object):
         self._exit_mode()
 
         return self.exit_event.get_value()
+
+    @staticmethod
+    def initialize_vim(working_path, pipe_name):
+        # file initializations relative to working paths
+        plugin_file = os.path.join(working_path, 'plugin.vim')
+
+        # lay em with the pipe
+        os.mkfifo(pipe_name)
+
+        # create the vim command that opens up vim instance in new terminal
+        # with proper settings, etc.
+        vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
+
+        # send command to open up new process, wait for command process to die
+        # before getting the pid of the actual vim process (this is like a
+        # super jank way of doing it but oh well (no i'm not closing these
+        # parentheses
+        args = [env_command[desktop_env], '-e', vim_command]
+        proc = subprocess.Popen(args).pid
+        os.waitid(os.P_PID, int(proc), os.WEXITED)
+        while True:
+            try:
+                logging.debug(vim_command)
+                proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
+                                         stdout=subprocess.PIPE)
+                                  .stdout.read().decode('utf-8').rstrip())
+                logging.debug(proc)
+                proc = int(proc)
+                break
+            except:
+                pass
+        return proc

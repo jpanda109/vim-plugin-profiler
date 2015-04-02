@@ -4,6 +4,7 @@ from .modes import startup
 from .lib import wrappers
 
 
+# dict mapping mode number to its respective main function
 modes = {
     1: regurgitate.main,
     2: startup.main

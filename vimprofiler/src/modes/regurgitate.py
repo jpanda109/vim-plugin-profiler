@@ -27,7 +27,11 @@ desktop_env = os.environ.get('DESKTOP_SESSION')
 
 def _calculate_cpu(interval, display_queue, exit_event):
 
-    """ calculate_cpu and send to display_queue """
+    """ calculate_cpu and send to display_queue
+    :param interval: interval at which cpu is calculated
+    :param display_queue: atomic queue to put calculations in to be displayed
+    :param exit_event: event that signals when to stop the thread
+    """
 
     proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
     time_file_name = '/proc/stat'
@@ -74,7 +78,13 @@ def _calculate_cpu(interval, display_queue, exit_event):
 
 def _display_to_screen(display_queue, screen, exit_event):
 
-    """ display stuff to curses """
+    """
+    display stuff from display_queue to screen
+    :param display_queue: atomic queue of stuff that wants to be displayed
+    :param screen: current working screen to display stuff to
+    :param exit_event: event that signals when to stop thread
+    :return:
+    """
 
     y, x = screen.getmaxyx()
     display_deque = collections.deque(maxlen=y-4)
@@ -91,7 +101,13 @@ def _display_to_screen(display_queue, screen, exit_event):
 
 def _load_commands(pipe_name, display_queue, exit_event):
 
-    """ receive the commands sent through pipe from the vim process """
+    """
+    get commands from vim process through pipe, and act accordingly
+    :param pipe_name: name of pipe between this and vim process
+    :param display_queue: atomic queue to put stuff you want to display in
+    :param exit_event: utils.VaueEvent() object that propagates through all threads
+    :return:
+    """
 
     try:
         os.remove('commands.db')
@@ -116,7 +132,12 @@ def _load_commands(pipe_name, display_queue, exit_event):
 
 def _process_input(screen, exit_event):
 
-    """ put keypresses into input queue """
+    """
+    thread that gets input from screen and acts accordingly
+    :param screen: current working screen
+    :param exit_event: utils.ValueEvent() object that propagates through all threads
+    :return:
+    """
 
     while not exit_event.is_set():
         try:
@@ -137,7 +158,14 @@ def _process_input(screen, exit_event):
 
 def _exit_mode(threads, proc, screen, pipe_name):
 
-    """ gracefully clean up everything this mode was doing """
+    """
+    gracefully clean up everything this mode was doing
+    :param threads: threads to be joined
+    :param proc: process id of the vim process
+    :param screen: current working screen
+    :param pipe_name: name of pipe between this and vim process
+    :return:
+    """
 
     for thread in threads:
         screen.clear()
@@ -158,7 +186,8 @@ def main(screen, working_path):
 
     """ main function for this mode
     :param screen: screen that this mode is operating on
-    :working_path: working path for things like plugin.vim
+    :param working_path: working path for things like plugin.vim
+    :return the mode that should be switched to
     """
 
     y, x = screen.getmaxyx()

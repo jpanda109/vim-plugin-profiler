@@ -86,19 +86,6 @@ def _display_to_screen(display_queue, screen, exit_event):
             curses.doupdate()
 
 
-def _handle_input(input_queue, exit_event):
-
-    """ decide what keypresses from input_queue will do """
-
-    while not exit_event.is_set():
-        if not input_queue.empty():
-            keypress = input_queue.get()
-            if keypress == 'q' or keypress == 'Q':
-                exit_event.set(0)
-            if keypress == '1':
-                exit_event.set(1)
-
-
 def _load_commands(pipe_name, display_queue, exit_event):
 
     """ receive the commands sent through pipe from the vim process """
@@ -124,7 +111,7 @@ def _load_commands(pipe_name, display_queue, exit_event):
     conn.close()
 
 
-def _process_input(input_queue, screen, exit_event):
+def _process_input(screen, exit_event):
 
     """ put keypresses into input queue """
 
@@ -132,7 +119,10 @@ def _process_input(input_queue, screen, exit_event):
         try:
             keypress = screen.getkey()
             logging.debug(keypress)
-            input_queue.put(keypress)
+            if keypress == 'q' or keypress == 'Q':
+                exit_event.set(0)
+            if keypress == '1':
+                exit_event.set(1)
         except curses.error:
             pass
 
@@ -206,9 +196,8 @@ def main(screen, working_path):
         threads = []
         exit_event = utils.ValueEvent()
         display_queue = queue.Queue()
-        input_queue = queue.Queue()
         threads.append(threading.Thread(target=_process_input,
-                                        args=(input_queue, screen, exit_event),
+                                        args=(screen, exit_event),
                                         daemon=True))
         threads.append(threading.Thread(target=_calculate_cpu,
                                         args=(1, display_queue, exit_event),
@@ -220,9 +209,6 @@ def main(screen, working_path):
         threads.append(threading.Thread(target=_display_to_screen,
                                         args=(display_queue, screen,
                                               exit_event),
-                                        daemon=True))
-        threads.append(threading.Thread(target=_handle_input,
-                                        args=(input_queue, exit_event),
                                         daemon=True))
         for thread in threads:
             thread.start()

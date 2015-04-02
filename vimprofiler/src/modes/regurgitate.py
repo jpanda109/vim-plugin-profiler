@@ -9,7 +9,6 @@ import collections
 import json
 import sqlite3
 import curses
-import platform
 
 from ..lib import utils
 
@@ -189,8 +188,6 @@ def main(screen, working_path):
         # super jank way of doing it but oh well (no i'm not closing these
         # parentheses
         args = ['gnome-terminal', '-e', vim_command]
-        if platform.system() == 'Darwin':
-            args = 
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)
         while True:

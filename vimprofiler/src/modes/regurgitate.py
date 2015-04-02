@@ -9,6 +9,7 @@ import collections
 import json
 import sqlite3
 import curses
+import platform
 
 from ..lib import utils
 
@@ -157,7 +158,10 @@ def _exit_mode(threads, proc, screen):
 
 def main(screen, working_path):
 
-    """ main function for this mode """
+    """ main function for this mode
+    :param screen: screen that this mode is operating on
+    :working_path: working path for things like plugin.vim
+    """
 
     y, x = screen.getmaxyx()
 
@@ -185,6 +189,8 @@ def main(screen, working_path):
         # super jank way of doing it but oh well (no i'm not closing these
         # parentheses
         args = ['gnome-terminal', '-e', vim_command]
+        if platform.system() == 'Darwin':
+            args = 
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)
         while True:

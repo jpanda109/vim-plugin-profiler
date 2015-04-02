@@ -14,9 +14,12 @@ from ..lib import utils
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
-
-
 HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
+env_command = {
+    'ubuntu': 'gnome-terminal',
+    'xubuntu': 'xfce4-terminal'
+}
+desktop_env = os.environ.get('DESKTOP_SESSION')
 
 
 """ tasks to be run by threads"""
@@ -177,7 +180,7 @@ def main(screen, working_path):
         # before getting the pid of the actual vim process (this is like a
         # super jank way of doing it but oh well (no i'm not closing these
         # parentheses
-        args = ['gnome-terminal', '-e', vim_command]
+        args = [env_command[desktop_env], '-e', vim_command]
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)
         while True:

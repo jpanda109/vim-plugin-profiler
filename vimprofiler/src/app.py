@@ -4,13 +4,6 @@ from .modes import startup
 from .lib import wrappers
 
 
-# dict mapping mode number to its respective main function
-modes = {
-    1: regurgitate.main,
-    2: startup.main
-}
-
-
 @wrappers.safe_exc
 def main(screen, working_path):
 
@@ -30,4 +23,8 @@ def main(screen, working_path):
             screen.addstr(y - 1, col, commands[i])
             prev_col = col
         # switch modes
-        mode = modes[mode](screen, working_path)
+        if mode == 1:
+            mode = regurgitate.main(screen, working_path)
+        elif mode == 2:
+            startup_mode = startup.StartupMode(screen, working_path)
+            mode = startup_mode.main()

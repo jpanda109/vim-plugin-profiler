@@ -10,8 +10,10 @@ import json
 import sqlite3
 import curses
 
+from ..lib import utils
 
-logging.basicConfig(filesname='logging_stuff.log', level=logging.DEBUG)
+
+logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
 HERTZ = 250
@@ -96,7 +98,7 @@ def _handle_input(input_queue, exit_event):
         if not input_queue.empty():
             keypress = input_queue.get()
             if keypress == 'q' or keypress == 'Q':
-                exit_event.set()
+                exit_event.set(0)
 
 
 def _load_commands(pipe_name, display_queue, exit_event):
@@ -148,7 +150,6 @@ def exit_mode(threads, proc, screen):
         screen.clear()
         screen.addstr(0, 0, 'cleaning up')
         screen.refresh()
-        logging.debug('thread')
         thread.join()
     try:
         os.kill(proc, 9)
@@ -198,7 +199,7 @@ def main(screen, working_path):
 
         # initialize threads and synchronization items
         threads = []
-        exit_event = threading.Event()
+        exit_event = utils.ValueEvent()
         display_queue = queue.Queue()
         input_queue = queue.Queue()
         threads.append(threading.Thread(target=_process_input,
@@ -223,3 +224,4 @@ def main(screen, working_path):
 
         exit_event.wait()
         exit_mode(threads, proc, screen)
+    return exit_event.get_value()

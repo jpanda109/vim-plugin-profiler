@@ -18,5 +18,4 @@ modes = {
 def main(screen, working_path):
     mode = 1
     while mode != 0:
-        modes[mode](screen, working_path)
-        #  regurgitate.main(screen, working_path)
+        mode = modes[mode](screen, working_path)

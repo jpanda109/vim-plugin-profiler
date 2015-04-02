@@ -4,13 +4,146 @@ import tempfile
 import threading
 import queue
 import subprocess
+import time
+import collections
+import json
+import sqlite3
+import curses
 
-from ..lib import tasks
 
 logging.basicConfig(filesname='logging_stuff.log', level=logging.DEBUG)
 
 
+HERTZ = 250
+try:
+    os.remove('commands.db')
+except OSError:
+    pass
+
+
+""" tasks to be run by threads"""
+
+
+def _calculate_cpu(interval, display_queue, exit_event):
+
+    """ calculate_cpu and send to display_queue """
+
+    proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
+    time_file_name = '/proc/stat'
+    utime_prev = 0
+    utime_next = 0
+    stime_prev = 0
+    stime_next = 0
+    cutime_prev = 0
+    cutime_next = 0
+    cstime_prev = 0
+    cstime_next = 0
+    time_prev = 0
+    time_next = 0
+    with open(time_file_name, 'r') as time_file:
+        time_stats = time_file.readline().split(' ')[2:]
+    time_prev = sum(map(float, time_stats))
+    time.sleep(interval)
+    while not exit_event.is_set():
+        with open(proc_file_name, 'r') as proc_file:
+            stats = proc_file.readline().split(' ')
+        with open(time_file_name, 'r') as time_file:
+            time_stats = time_file.readline().split(' ')[2:]
+        utime_next = float(stats[13])
+        stime_next = float(stats[14])
+        cutime_next = float(stats[15])
+        cstime_next = float(stats[16])
+
+        time_next = sum(map(float, time_stats))
+        seconds = time_next - time_prev
+
+        total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
+        total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
+        cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+        display_queue.put(cpu_usage)
+
+        time.sleep(interval)
+
+        utime_prev = utime_next
+        stime_prev = stime_next
+        cutime_prev = cutime_next
+        cstime_prev = cstime_next
+        time_prev = time_next
+
+
+def _display_to_screen(display_queue, screen, exit_event):
+
+    """ display stuff to curses """
+
+    y, x = screen.getmaxyx()
+    display_deque = collections.deque(maxlen=y-2)
+    while not exit_event.is_set():
+        if not display_queue.empty():
+            display_deque.append(display_queue.get())
+            curses.setsyx(0, 0)
+            for i, item in enumerate(display_deque):
+                screen.clrtoeol()
+                screen.addstr(i, 0, str(item)[:x-2])
+                screen.noutrefresh()
+            curses.doupdate()
+
+
+def _handle_input(input_queue, exit_event):
+
+    """ decide what keypresses from input_queue will do """
+
+    while not exit_event.is_set():
+        if not input_queue.empty():
+            keypress = input_queue.get()
+            if keypress == 'q' or keypress == 'Q':
+                exit_event.set()
+
+
+def _load_commands(pipe_name, display_queue, exit_event):
+
+    """ receive the commands sent through pipe from the vim process """
+
+    try:
+        os.remove('commands.db')
+    except OSError:
+        pass
+    conn = sqlite3.connect('commands.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE commands
+                 (time, command)''')
+    with open(pipe_name, 'r') as pipe:
+        while not exit_event.is_set():
+            line = pipe.readline()
+            if line.rstrip() == '':
+                continue
+            command = json.loads(line, encoding='utf-8')
+            display_queue.put(command)
+            c.execute('INSERT INTO commands VALUES (?,?)',
+                      (command['time'], command['command']))
+    conn.commit()
+    conn.close()
+
+
+def _process_input(input_queue, screen, exit_event):
+
+    """ put keypresses into input queue """
+
+    while not exit_event.is_set():
+        try:
+            keypress = screen.getkey()
+            logging.debug(keypress)
+            input_queue.put(keypress)
+        except curses.error:
+            pass
+
+
+""" non-threaded program logic """
+
+
 def exit_mode(threads, proc, screen):
+
+    """ gracefully clean up everything this mode was doing """
+
     for thread in threads:
         screen.clear()
         screen.addstr(0, 0, 'cleaning up')
@@ -23,15 +156,8 @@ def exit_mode(threads, proc, screen):
         pass
 
 
-def handle_input(input_queue, exit_event):
-    while not exit_event.is_set():
-        if not input_queue.empty():
-            keypress = input_queue.get()
-            if keypress == 'q' or keypress == 'Q':
-                exit_event.set()
-
-
 def main(screen, working_path):
+
     """ main function for this mode """
 
     y, x = screen.getmaxyx()
@@ -39,8 +165,6 @@ def main(screen, working_path):
     screen.addstr(y - 1, 0, 'q: QUIT')
 
     # file initializations relative to working paths
-    # working_path = os.path.dirname(os.path.abspath(__file__))
-    # working_path = os.environ['cur_working_path']
     plugin_file = os.path.join(working_path, 'plugin.vim')
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -77,21 +201,21 @@ def main(screen, working_path):
         exit_event = threading.Event()
         display_queue = queue.Queue()
         input_queue = queue.Queue()
-        threads.append(threading.Thread(target=tasks.process_input,
+        threads.append(threading.Thread(target=_process_input,
                                         args=(input_queue, screen, exit_event),
                                         daemon=True))
-        threads.append(threading.Thread(target=tasks.calculate_cpu,
+        threads.append(threading.Thread(target=_calculate_cpu,
                                         args=(1, display_queue, exit_event),
                                         daemon=True))
-        threads.append(threading.Thread(target=tasks.load_commands,
+        threads.append(threading.Thread(target=_load_commands,
                                         args=(pipe_name, display_queue,
                                               exit_event),
                                         daemon=True))
-        threads.append(threading.Thread(target=tasks.display_commands,
+        threads.append(threading.Thread(target=_display_to_screen,
                                         args=(display_queue, screen,
                                               exit_event),
                                         daemon=True))
-        threads.append(threading.Thread(target=handle_input,
+        threads.append(threading.Thread(target=_handle_input,
                                         args=(input_queue, exit_event),
                                         daemon=True))
         for thread in threads:

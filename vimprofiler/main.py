@@ -4,6 +4,9 @@ import src.app as app
 
 
 if __name__ == "__main__":
+
+    """ simple where the curses screen and working path are set """
+
     working_path = os.path.dirname(os.path.abspath(__file__))
     myscreen = curses.initscr()
     myscreen.nodelay(1)

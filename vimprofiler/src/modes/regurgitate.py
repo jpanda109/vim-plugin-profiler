@@ -16,11 +16,7 @@ from ..lib import utils
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
-HERTZ = 250
-try:
-    os.remove('commands.db')
-except OSError:
-    pass
+HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
 
 
 """ tasks to be run by threads"""
@@ -78,7 +74,7 @@ def _display_to_screen(display_queue, screen, exit_event):
     """ display stuff to curses """
 
     y, x = screen.getmaxyx()
-    display_deque = collections.deque(maxlen=y-2)
+    display_deque = collections.deque(maxlen=y-4)
     while not exit_event.is_set():
         if not display_queue.empty():
             display_deque.append(display_queue.get())
@@ -99,6 +95,8 @@ def _handle_input(input_queue, exit_event):
             keypress = input_queue.get()
             if keypress == 'q' or keypress == 'Q':
                 exit_event.set(0)
+            if keypress == '1':
+                exit_event.set(1)
 
 
 def _load_commands(pipe_name, display_queue, exit_event):
@@ -142,7 +140,7 @@ def _process_input(input_queue, screen, exit_event):
 """ non-threaded program logic """
 
 
-def exit_mode(threads, proc, screen):
+def _exit_mode(threads, proc, screen):
 
     """ gracefully clean up everything this mode was doing """
 
@@ -162,8 +160,12 @@ def main(screen, working_path):
     """ main function for this mode """
 
     y, x = screen.getmaxyx()
-    screen.clear()
-    screen.addstr(y - 1, 0, 'q: QUIT')
+
+    # display mode specific commands on line y - 2
+    commands = ['a: Analyze', 'o: Open']
+    for i in range(len(commands)):
+        col = 0 if i == 0 else len(commands[i - 1]) + 4
+        screen.addstr(y - 2, col, commands[i])
 
     # file initializations relative to working paths
     plugin_file = os.path.join(working_path, 'plugin.vim')
@@ -223,5 +225,5 @@ def main(screen, working_path):
             thread.start()
 
         exit_event.wait()
-        exit_mode(threads, proc, screen)
+        _exit_mode(threads, proc, screen)
     return exit_event.get_value()

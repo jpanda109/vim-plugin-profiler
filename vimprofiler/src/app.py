@@ -24,7 +24,8 @@ def main(screen, working_path):
             prev_col = col
         # switch modes
         if mode == 1:
-            mode = regurgitate.main(screen, working_path)
+            regurgitate_mode = regurgitate.RegurgitateMode(screen, working_path)
+            mode = regurgitate_mode.main()
         elif mode == 2:
             startup_mode = startup.StartupMode(screen, working_path)
             mode = startup_mode.main()

@@ -126,6 +126,8 @@ def _process_input(screen, exit_event):
                 exit_event.set(0)
             if keypress == '1':
                 exit_event.set(1)
+            if keypress == '2':
+                exit_event.set(2)
         except curses.error:
             pass
 

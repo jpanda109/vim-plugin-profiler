@@ -18,6 +18,9 @@ except OSError:
 
 
 def process_input(input_queue, screen, exit_event):
+
+    """ process keypress from input queue """
+
     while not exit_event.is_set():
         try:
             keypress = screen.getkey()
@@ -28,6 +31,9 @@ def process_input(input_queue, screen, exit_event):
 
 
 def calculate_cpu(interval, display_queue, exit_event):
+
+    """ calculate_cpu and send to display_queue """
+
     proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
     time_file_name = '/proc/stat'
     utime_prev = 0
@@ -72,6 +78,9 @@ def calculate_cpu(interval, display_queue, exit_event):
 
 
 def display_commands(display_queue, screen, exit_event):
+
+    """ display stuff to curses """
+
     y, x = screen.getmaxyx()
     display_deque = collections.deque(maxlen=y-2)
     while not exit_event.is_set():
@@ -86,6 +95,13 @@ def display_commands(display_queue, screen, exit_event):
 
 
 def load_commands(pipe_name, display_queue, exit_event):
+
+    """ receive the commands sent through pipe from the vim process """
+
+    try:
+        os.remove('commands.db')
+    except OSError:
+        pass
     conn = sqlite3.connect('commands.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE commands

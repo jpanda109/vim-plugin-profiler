@@ -23,9 +23,12 @@ def exit_mode(threads, proc, screen):
         pass
 
 
-def handle_input(keypress, exit_event):
-    if keypress == 'q' or keypress == 'Q':
-        exit_event.set()
+def handle_input(input_queue, exit_event):
+    while not exit_event.is_set():
+        if not input_queue.empty():
+            keypress = input_queue.get()
+            if keypress == 'q' or keypress == 'Q':
+                exit_event.set()
 
 
 def main(screen, working_path):
@@ -88,13 +91,11 @@ def main(screen, working_path):
                                         args=(display_queue, screen,
                                               exit_event),
                                         daemon=True))
+        threads.append(threading.Thread(target=handle_input,
+                                        args=(input_queue, exit_event),
+                                        daemon=True))
         for thread in threads:
             thread.start()
 
-        # main program logic and curses manipulation starts here
-        while not exit_event.is_set():
-            if not input_queue.empty():
-                logging.debug('check_input_queue')
-                keypress = input_queue.get()
-                handle_input(keypress, exit_event)
+        exit_event.wait()
         exit_mode(threads, proc, screen)

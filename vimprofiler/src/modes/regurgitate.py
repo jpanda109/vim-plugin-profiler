@@ -133,7 +133,7 @@ def _process_input(screen, exit_event):
 """ non-threaded program logic """
 
 
-def _exit_mode(threads, proc, screen):
+def _exit_mode(threads, proc, screen, pipe_name):
 
     """ gracefully clean up everything this mode was doing """
 
@@ -144,6 +144,10 @@ def _exit_mode(threads, proc, screen):
         thread.join()
     try:
         os.kill(proc, 9)
+    except OSError:
+        pass
+    try:
+        os.remove(pipe_name)
     except OSError:
         pass
 
@@ -165,57 +169,57 @@ def main(screen, working_path):
 
     # file initializations relative to working paths
     plugin_file = os.path.join(working_path, 'plugin.vim')
+    pipe_name = os.path.join(working_path, 'tmpfifo')
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # lay em with the pipe
-        pipe_name = os.path.join(tmpdir, 'tmpfifo')
-        os.mkfifo(pipe_name)
-        os.environ['VIMUALIZER_PIPE_NAME'] = pipe_name
+    # lay em with the pipe
+    os.mkfifo(pipe_name)
+    os.environ['VIMUALIZER_PIPE_NAME'] = pipe_name
 
-        # create the vim command that opens up vim instance in new terminal
-        # with proper settings, etc.
-        vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
+    # create the vim command that opens up vim instance in new terminal
+    # with proper settings, etc.
+    vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
 
-        # send command to open up new process, wait for command process to die
-        # before getting the pid of the actual vim process (this is like a
-        # super jank way of doing it but oh well (no i'm not closing these
-        # parentheses
-        args = [env_command[desktop_env], '-e', vim_command]
-        proc = subprocess.Popen(args).pid
-        os.waitid(os.P_PID, int(proc), os.WEXITED)
-        while True:
-            try:
-                logging.debug(vim_command)
-                proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
-                                         stdout=subprocess.PIPE)
-                                  .stdout.read().decode('utf-8').rstrip())
-                logging.debug(proc)
-                proc = int(proc)
-                break
-            except:
-                pass
+    # send command to open up new process, wait for command process to die
+    # before getting the pid of the actual vim process (this is like a
+    # super jank way of doing it but oh well (no i'm not closing these
+    # parentheses
+    args = [env_command[desktop_env], '-e', vim_command]
+    proc = subprocess.Popen(args).pid
+    os.waitid(os.P_PID, int(proc), os.WEXITED)
+    while True:
+        try:
+            logging.debug(vim_command)
+            proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
+                                     stdout=subprocess.PIPE)
+                              .stdout.read().decode('utf-8').rstrip())
+            logging.debug(proc)
+            proc = int(proc)
+            break
+        except:
+            pass
 
-        # initialize threads and synchronization items
-        threads = []
-        exit_event = utils.ValueEvent()
-        display_queue = queue.Queue()
-        threads.append(threading.Thread(target=_process_input,
-                                        args=(screen, exit_event),
-                                        daemon=True))
-        threads.append(threading.Thread(target=_calculate_cpu,
-                                        args=(1, display_queue, exit_event),
-                                        daemon=True))
-        threads.append(threading.Thread(target=_load_commands,
-                                        args=(pipe_name, display_queue,
-                                              exit_event),
-                                        daemon=True))
-        threads.append(threading.Thread(target=_display_to_screen,
-                                        args=(display_queue, screen,
-                                              exit_event),
-                                        daemon=True))
-        for thread in threads:
-            thread.start()
+    # initialize threads and synchronization items
+    threads = []
+    exit_event = utils.ValueEvent()
+    display_queue = queue.Queue()
+    threads.append(threading.Thread(target=_process_input,
+                                    args=(screen, exit_event),
+                                    daemon=True))
+    threads.append(threading.Thread(target=_calculate_cpu,
+                                    args=(1, display_queue, exit_event),
+                                    daemon=True))
+    threads.append(threading.Thread(target=_load_commands,
+                                    args=(pipe_name, display_queue,
+                                          exit_event),
+                                    daemon=True))
+    threads.append(threading.Thread(target=_display_to_screen,
+                                    args=(display_queue, screen,
+                                          exit_event),
+                                    daemon=True))
+    for thread in threads:
+        thread.start()
 
-        exit_event.wait()
-        _exit_mode(threads, proc, screen)
+    exit_event.wait()
+    _exit_mode(threads, proc, screen, pipe_name)
+
     return exit_event.get_value()

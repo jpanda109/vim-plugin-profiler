@@ -29,8 +29,11 @@ def handle_input(keypress, exit_event):
 
 
 def main(screen, working_path):
-    """ main curses screen logic; I think everything before with open(pipe_name)
-    can actuall be moved elsewhere for code prettyness"""
+    """ main function for this mode """
+
+    y, x = screen.getmaxyx()
+    screen.clear()
+    screen.addstr(y - 1, 0, 'q: QUIT')
 
     # file initializations relative to working paths
     # working_path = os.path.dirname(os.path.abspath(__file__))

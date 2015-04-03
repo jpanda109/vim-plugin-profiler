@@ -1,4 +1,5 @@
 import logging
+import queue
 import threading
 import curses
 import os
@@ -27,10 +28,13 @@ class StartupMode(abstract_mode.Mode):
         self.threads = []
         self.exit_event = utils.ValueEvent()
         self.change_event = threading.Event()
+        self.analysis_event = threading.Event()
         self.vimrc_path = os.path.expanduser('~/.vim/.vimrc')
         self.all_plugins = self.get_plugins(self.vimrc_path)
         self.plugin_statuses = [True] * len(self.all_plugins)
         self.status_lock = threading.Lock()
+        self.startup_lock = threading.Lock()
+        self.analysis_queue = queue.Queue()
 
     def run(self):
         """
@@ -85,6 +89,14 @@ class StartupMode(abstract_mode.Mode):
                 self.screen.noutrefresh()
                 curses.doupdate()
                 self.change_event.clear()
+            if self.analysis_event.is_set():
+                while not self.analysis_queue.empty():
+                    source_times = self.analysis_queue.get()
+                for i in range(10):
+                    self.screen.addstr(i + 10, 0, source_times[i])
+                    self.screen.noutrefresh()
+                curses.doupdate()
+                self.analysis_event.clear()
 
     def _exit_mode(self):
         """
@@ -108,14 +120,37 @@ class StartupMode(abstract_mode.Mode):
             for i, p in enumerate(self.all_plugins):
                 if self.plugin_statuses[i]:
                     valid_plugins.append('Plugin ' + p)
-        with open(self.vimrc_path, 'r') as vimrc_orig:
-            with open(vimrc_new_path, 'w') as vimrc_new:
-                for line in vimrc_orig:
-                    if line.startswith('Plugin') and line.rstrip() not in valid_plugins:
-                        continue
-                    else:
-                        vimrc_new.write(line)
-        args = ['vim', '-u', vimrc_new_path, '--startuptime', 'vimprofile.log']
+        with self.startup_lock:
+            with open(self.vimrc_path, 'r') as vimrc_orig:
+                with open(vimrc_new_path, 'w') as vimrc_new:
+                    for line in vimrc_orig:
+                        if line.startswith('Plugin') and line.rstrip() not in valid_plugins:
+                            continue
+                        else:
+                            vimrc_new.write(line)
+            startup_file = os.path.join(self.working_path, 'startup.log')
+            vim_command = 'vim -u ' + vimrc_new_path + ' --startuptime ' + startup_file
+            args = ['gnome-terminal', '-e', vim_command]
+            proc = subprocess.Popen(args).pid
+            os.waitid(os.P_PID, int(proc), os.WEXITED)
+            while not os.path.exists(startup_file):
+                pass
+            proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
+                                     stdout=subprocess.PIPE)
+                              .stdout.read().decode('utf-8').rstrip())
+            os.kill(int(proc), 9)
+            source_times = []
+            for line in startup_file:
+                try:
+                    float(line.rsplit(' ')[0])
+                except ValueError:
+                    continue
+                source_times.append(line)
+
+            source_times.sort(key=lambda s_line: float(s_line.split(' ')[1]))
+            self.analysis_queue.put(source_times)
+            os.remove(vimrc_new_path)
+            os.remove(startup_file)
 
     def _process_input(self):
         """

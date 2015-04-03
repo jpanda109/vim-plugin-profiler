@@ -24,17 +24,17 @@ class StartupMode(abstract_mode.Mode):
         """
         self.screen = screen
         self.working_path = working_path
-        self.selected_line = 0
-        self.threads = []
-        self.exit_event = utils.ValueEvent()
-        self.change_event = threading.Event()
-        self.analysis_event = threading.Event()
-        self.vimrc_path = os.path.expanduser('~/.vim/.vimrc')
-        self.all_plugins = self.get_plugins(self.vimrc_path)
-        self.plugin_statuses = [True] * len(self.all_plugins)
-        self.status_lock = threading.Lock()
-        self.startup_lock = threading.Lock()
-        self.analysis_queue = queue.Queue()
+        self.selected_line = 0  # highlights line selected by user (for toggling plugins)
+        self.threads = []  # threads being managed by mode
+        self.exit_event = utils.ValueEvent()  # signals when to terminate program
+        self.change_event = threading.Event()  # signals change due to user input
+        self.analysis_event = threading.Event()  # signals an analysis request was sent
+        self.vimrc_path = os.path.expanduser('~/.vim/.vimrc')  # path to user's vimrc
+        self.all_plugins = self.get_plugins(self.vimrc_path)  # all plugins originally sourced by user
+        self.plugin_statuses = [True] * len(self.all_plugins)  # indicates which plugins currently sourced
+        self.status_lock = threading.Lock()  # lock for modifying and viewing statuses
+        self.startup_lock = threading.Lock()  # lock for startup analysis (file modification)
+        self.analysis_queue = queue.Queue()  # atomic queue containing lines from --startuptime command
 
     def run(self):
         """
@@ -77,6 +77,7 @@ class StartupMode(abstract_mode.Mode):
         self.change_event.set()
         while not self.exit_event.is_set():
             if self.change_event.is_set():
+                # deal with user input changes
                 with self.status_lock:
                     for i, status in enumerate(self.plugin_statuses):
                         s = 'O' if status else 'X'
@@ -90,6 +91,7 @@ class StartupMode(abstract_mode.Mode):
                 curses.doupdate()
                 self.change_event.clear()
             if self.analysis_event.is_set():
+                # deal with startup analysis requests
                 while not self.analysis_queue.empty():
                     source_times = self.analysis_queue.get()
                 for i in range(10):

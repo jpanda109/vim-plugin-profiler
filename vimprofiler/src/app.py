@@ -28,4 +28,6 @@ def main(screen, working_path):
             mode = regurgitate.RegurgitateMode(screen, working_path)
         elif next_mode == 2:
             mode = startup.StartupMode(screen, working_path)
+        else:
+            mode = regurgitate.RegurgitateMode(screen, working_path)
         next_mode = mode.run()

@@ -47,6 +47,14 @@ class StartupMode(abstract_mode.Mode):
 
     def _display_to_screen(self):
         y, x = self.screen.getmaxyx()
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate']
+        prev_col = 0
+        for i in range(len(commands)):
+            col = 0 if i == 0 else len(commands[i-1]) + 4
+            col += prev_col
+            self.screen.addstr(y - 2, col, commands[i])
+            prev_col = col
+
         self.change_event.set()
         while not self.exit_event.is_set():
             if self.change_event.is_set():
@@ -87,9 +95,10 @@ class StartupMode(abstract_mode.Mode):
                     if self.selected_line != len(self.all_plugins) - 1:
                         self.selected_line += 1
                         self.change_event.set()
-                elif keypress == curses.KEY_ENTER:
+                elif keypress == 'c':
                     self.plugin_statuses[self.selected_line] = not self.plugin_statuses[self.selected_line]
                     self.change_event.set()
+                logging.debug(keypress)
             except curses.error:
                 pass
 

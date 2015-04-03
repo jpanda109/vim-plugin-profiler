@@ -180,9 +180,12 @@ class RegurgitateMode(abstract_mode.Mode):
         # display mode specific commands on line y - 2
         y, x = self.screen.getmaxyx()
         commands = ['a: Analyze', 'o: Open']
+        prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4
+            col += prev_col
             self.screen.addstr(y - 2, col, commands[i])
+            prev_col = col
 
         # initialize threads and synchronization items
         self.threads.append(threading.Thread(target=self._process_input,

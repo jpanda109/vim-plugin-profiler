@@ -128,29 +128,38 @@ class StartupMode(abstract_mode.Mode):
                             continue
                         else:
                             vimrc_new.write(line)
-            startup_file = os.path.join(self.working_path, 'startup.log')
-            vim_command = 'vim -u ' + vimrc_new_path + ' --startuptime ' + startup_file
+            startup_file_path = os.path.join(self.working_path, 'startup.log')
+            vim_command = 'vim -u ' + vimrc_new_path + ' --startuptime ' + startup_file_path
             args = ['gnome-terminal', '-e', vim_command]
             proc = subprocess.Popen(args).pid
             os.waitid(os.P_PID, int(proc), os.WEXITED)
-            while not os.path.exists(startup_file):
+            while not os.path.exists(startup_file_path):
                 pass
+            while True:
+                with open(startup_file_path, 'r') as startup_file:
+                    for line in startup_file:
+                        pass
+                    if 'VIM STARTED' in line:
+                        break
             proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
                                      stdout=subprocess.PIPE)
                               .stdout.read().decode('utf-8').rstrip())
             os.kill(int(proc), 9)
             source_times = []
-            for line in startup_file:
-                try:
-                    float(line.rsplit(' ')[0])
-                except ValueError:
-                    continue
-                source_times.append(line)
+            with open(startup_file_path, 'r') as startup_file:
+                for line in startup_file:
+                    logging.debug(line.rsplit(' '))
+                    try:
+                        float(line.rsplit(' ')[2])
+                    except (ValueError, IndexError):
+                        continue
+                    source_times.append(line)
 
-            source_times.sort(key=lambda s_line: float(s_line.split(' ')[1]))
+            source_times.sort(key=lambda s_line: float(s_line.split(' ')[2]))
             self.analysis_queue.put(source_times)
+            self.analysis_event.set()
             os.remove(vimrc_new_path)
-            os.remove(startup_file)
+            os.remove(startup_file_path)
 
     def _process_input(self):
         """

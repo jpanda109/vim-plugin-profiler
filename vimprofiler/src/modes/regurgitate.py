@@ -175,6 +175,11 @@ class RegurgitateMode(abstract_mode.Mode):
             os.remove(swap_file_path)
         except OSError:
             pass
+        try:
+            profile_path = os.path.join(self.working_path, 'profile.log')
+            os.remove(profile_path)
+        except OSError:
+            pass
 
     def run(self):
 
@@ -219,7 +224,9 @@ class RegurgitateMode(abstract_mode.Mode):
 
         # create the vim command that opens up vim instance in new terminal
         # with proper settings, etc.
-        vim_command = ('vim -S %r -c %r' % (plugin_file, 'call AutoLogInfo()'))
+        profile_path = os.path.join(working_path, 'profile.log')
+        startup_command = 'call AutoLogInfo() | profile start ' + profile_path + ' | profile func * | profile file *'
+        vim_command = ('vim -S %r -c %r' % (plugin_file, startup_command))
 
         # send command to open up new process, wait for command process to die
         # before getting the pid of the actual vim process (this is like a

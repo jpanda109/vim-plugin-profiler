@@ -14,8 +14,7 @@ def main(screen, working_path):
 
     # fencepost: first mode to be run
     mode = regurgitate.RegurgitateMode(screen, working_path)
-    mode.run()
-    next_mode = mode.get_next_mode()
+    next_mode = mode.run()
     while next_mode != 0:
         # print the base commands (quit and modes)
         screen.clear()
@@ -28,8 +27,6 @@ def main(screen, working_path):
         # switch modes
         if next_mode == 1:
             mode = regurgitate.RegurgitateMode(screen, working_path)
-            mode.run()
         elif next_mode == 2:
             mode = startup.StartupMode(screen, working_path)
-            mode.run()
-        next_mode = mode.get_next_mode()
+        next_mode = mode.run()

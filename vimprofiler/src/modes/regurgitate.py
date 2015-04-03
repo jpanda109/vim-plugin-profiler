@@ -170,6 +170,11 @@ class RegurgitateMode(abstract_mode.Mode):
             os.remove(self.pipe_name)
         except OSError:
             pass
+        try:
+            swap_file_path = os.path.join(self.working_path, '.swp')
+            os.remove(swap_file_path)
+        except OSError:
+            pass
 
     def run(self):
 

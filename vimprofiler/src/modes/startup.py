@@ -66,7 +66,7 @@ class StartupMode(abstract_mode.Mode):
         :return:
         """
         y, x = self.screen.getmaxyx()
-        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'a: Analyze']
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i-1]) + 4
@@ -117,11 +117,15 @@ class StartupMode(abstract_mode.Mode):
         :return:
         """
         vimrc_new_path = os.path.join(self.working_path, 'vimrc')
+
+        # get valid plugins
         valid_plugins = []
         with self.status_lock:
             for i, p in enumerate(self.all_plugins):
                 if self.plugin_statuses[i]:
                     valid_plugins.append('Plugin ' + p)
+
+        # create process to open vim using --startuptime
         with self.startup_lock:
             with open(self.vimrc_path, 'r') as vimrc_orig:
                 with open(vimrc_new_path, 'w') as vimrc_new:
@@ -135,6 +139,8 @@ class StartupMode(abstract_mode.Mode):
             args = ['gnome-terminal', '-e', vim_command]
             proc = subprocess.Popen(args).pid
             os.waitid(os.P_PID, int(proc), os.WEXITED)
+
+            # check if startup file successfully made
             while not os.path.exists(startup_file_path):
                 pass
             while True:
@@ -147,6 +153,8 @@ class StartupMode(abstract_mode.Mode):
                                      stdout=subprocess.PIPE)
                               .stdout.read().decode('utf-8').rstrip())
             os.kill(int(proc), 9)
+
+            # gather source info from startuptime file
             source_times = []
             with open(startup_file_path, 'r') as startup_file:
                 for line in startup_file:
@@ -157,6 +165,7 @@ class StartupMode(abstract_mode.Mode):
                         continue
                     source_times.append(line)
 
+            # sort and place info into analysis queue
             source_times.sort(key=lambda s_line: float(s_line.split(' ')[2]))
             self.analysis_queue.put(source_times)
             self.analysis_event.set()
@@ -171,25 +180,25 @@ class StartupMode(abstract_mode.Mode):
         while not self.exit_event.is_set():
             try:
                 keypress = self.screen.getkey()
-                if keypress == 'q' or keypress == 'Q':
+                if keypress == 'q' or keypress == 'Q':  # quit program
                     self.exit_event.set(0)
-                elif keypress == '1':
+                elif keypress == '1':  # switch to mode 1
                     self.exit_event.set(1)
-                elif keypress == '2':
+                elif keypress == '2':  # switch to mode 2
                     self.exit_event.set(2)
-                elif keypress == 'k':
+                elif keypress == 'k':  # move selected line up
                     if self.selected_line != 0:
                         self.selected_line -= 1
                         self.change_event.set()
-                elif keypress == 'j':
+                elif keypress == 'j':  # move selected line down
                     if self.selected_line != len(self.all_plugins) - 1:
                         self.selected_line += 1
                         self.change_event.set()
-                elif keypress == 'c':
+                elif keypress == 'c':  # toggle selected plugin
                     with self.status_lock:
                         self.plugin_statuses[self.selected_line] = not self.plugin_statuses[self.selected_line]
                     self.change_event.set()
-                elif keypress == 'a':
+                elif keypress == 's':  # send analysis request for currently selected plugins
                     self._get_startup()
                 logging.debug(keypress)
             except curses.error:

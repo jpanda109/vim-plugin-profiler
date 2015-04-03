@@ -11,7 +11,3 @@ class Mode(object):
     @abc.abstractmethod
     def run(self):
         pass
-
-    @abc.abstractmethod
-    def get_next_mode(self):
-        pass

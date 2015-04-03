@@ -204,14 +204,6 @@ class RegurgitateMode(abstract_mode.Mode):
 
         return self.exit_event.get_value()
 
-    def get_next_mode(self):
-
-        """
-        :return: the next mode to be run after this object
-        """
-
-        return self.exit_event.get_value()
-
     @staticmethod
     def initialize_vim(working_path, pipe_name):
         # file initializations relative to working paths

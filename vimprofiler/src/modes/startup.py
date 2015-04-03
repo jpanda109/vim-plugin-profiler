@@ -3,7 +3,6 @@ import threading
 import curses
 import os
 import subprocess
-import shutil
 
 from ..modes import abstract_mode
 
@@ -16,6 +15,12 @@ logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 class StartupMode(abstract_mode.Mode):
 
     def __init__(self, screen, working_path):
+        """
+        initialize mode to be run by main application
+        :param screen: screen that mode is working with
+        :param working_path: working path of where youw ant to store stuff
+        :return:
+        """
         self.screen = screen
         self.working_path = working_path
         self.selected_line = 0
@@ -30,7 +35,8 @@ class StartupMode(abstract_mode.Mode):
     def run(self):
         """
         public inherited method that all methods must have to run
-        :return:
+        :return: the next mode, which is returned when the mode if done running, based on
+            exit_event
         """
         y, x = self.screen.getmaxyx()
 
@@ -47,9 +53,6 @@ class StartupMode(abstract_mode.Mode):
 
         self.exit_event.wait()
         self._exit_mode()
-        return self.exit_event.get_value()
-
-    def get_next_mode(self):
         return self.exit_event.get_value()
 
     def _display_to_screen(self):
@@ -84,6 +87,10 @@ class StartupMode(abstract_mode.Mode):
                 self.change_event.clear()
 
     def _exit_mode(self):
+        """
+        clean up threads and other weird stuff
+        :return:
+        """
         for thread in self.threads:
             self.screen.clear()
             self.screen.addstr(0, 0, 'cleaning up')
@@ -91,6 +98,10 @@ class StartupMode(abstract_mode.Mode):
             thread.join()
 
     def _get_startup(self):
+        """
+        get startup information based on new vimrc
+        :return:
+        """
         vimrc_new_path = os.path.join(self.working_path, 'vimrc')
         valid_plugins = []
         with self.status_lock:
@@ -104,8 +115,13 @@ class StartupMode(abstract_mode.Mode):
                         continue
                     else:
                         vimrc_new.write(line)
+        args = ['vim', '-u', vimrc_new_path, '--startuptime', 'vimprofile.log']
 
     def _process_input(self):
+        """
+        get keypresses from curses.screen and act accordingly
+        :return:
+        """
         while not self.exit_event.is_set():
             try:
                 keypress = self.screen.getkey()
@@ -135,6 +151,11 @@ class StartupMode(abstract_mode.Mode):
 
     @staticmethod
     def get_plugins(vimrc_path):
+        """
+        static method to retrieve plugins from vimrc file, assuming vundle based
+        :param vimrc_path: path to original vimrc
+        :return: list of plugins
+        """
         with open(vimrc_path, 'r') as vimrc:
             plugins = []
             begin_flag = False

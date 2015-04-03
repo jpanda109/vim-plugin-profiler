@@ -10,6 +10,7 @@ import sqlite3
 import curses
 
 from ..lib import utils
+from ..modes import abstract_mode
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
@@ -24,9 +25,16 @@ desktop_env = os.environ.get('DESKTOP_SESSION')
 """ tasks to be run by threads"""
 
 
-class RegurgitateMode(object):
+class RegurgitateMode(abstract_mode.Mode):
 
     def __init__(self, screen, working_path):
+
+        """
+        Initializes this mode
+        :param screen: screen that you're working with
+        :param working_path: path where things like plugin.vim is stored
+        :return:
+        """
         self.screen = screen
         self.working_path = working_path
         self.exit_event = utils.ValueEvent()
@@ -163,7 +171,7 @@ class RegurgitateMode(object):
         except OSError:
             pass
 
-    def main(self):
+    def run(self):
 
         """ main function for this mode
         :return the mode that should be switched to
@@ -190,6 +198,14 @@ class RegurgitateMode(object):
 
         self.exit_event.wait()
         self._exit_mode()
+
+        return self.exit_event.get_value()
+
+    def get_next_mode(self):
+
+        """
+        :return: the next mode to be run after this object
+        """
 
         return self.exit_event.get_value()
 

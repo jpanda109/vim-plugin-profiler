@@ -12,8 +12,11 @@ def main(screen, working_path):
     y, x = screen.getmaxyx()
     commands = ['q: Quit', '1: Regurgitate', '2: Startup']
 
-    mode = 1
-    while mode != 0:
+    # fencepost: first mode to be run
+    mode = regurgitate.RegurgitateMode(screen, working_path)
+    mode.run()
+    next_mode = mode.get_next_mode()
+    while next_mode != 0:
         # print the base commands (quit and modes)
         screen.clear()
         prev_col = 0
@@ -23,9 +26,10 @@ def main(screen, working_path):
             screen.addstr(y - 1, col, commands[i])
             prev_col = col
         # switch modes
-        if mode == 1:
-            regurgitate_mode = regurgitate.RegurgitateMode(screen, working_path)
-            mode = regurgitate_mode.main()
-        elif mode == 2:
-            startup_mode = startup.StartupMode(screen, working_path)
-            mode = startup_mode.main()
+        if next_mode == 1:
+            mode = regurgitate.RegurgitateMode(screen, working_path)
+            mode.run()
+        elif next_mode == 2:
+            mode = startup.StartupMode(screen, working_path)
+            mode.run()
+        next_mode = mode.get_next_mode()

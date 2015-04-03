@@ -2,13 +2,15 @@ import logging
 import os
 import shutil
 
+from ..modes import abstract_mode
+
 from ..lib import utils
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
-class StartupMode(object):
+class StartupMode(abstract_mode.Mode):
 
     def __init__(self, screen, working_path):
         self.screen = screen
@@ -17,7 +19,7 @@ class StartupMode(object):
         self.selected_line = 0
         self.exit_event = utils.ValueEvent()
 
-    def main(self):
+    def run(self):
         y, x = self.screen.getmaxyx()
 
         for i, plugin in enumerate(self.all_plugins):
@@ -25,6 +27,9 @@ class StartupMode(object):
         self.screen.refresh()
 
         self.exit_event.wait()
+        return self.exit_event.get_value()
+
+    def get_next_mode(self):
         return self.exit_event.get_value()
 
     @staticmethod

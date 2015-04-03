@@ -2,6 +2,7 @@ import logging
 import threading
 import curses
 import os
+import subprocess
 import shutil
 
 from ..modes import abstract_mode
@@ -17,14 +18,20 @@ class StartupMode(abstract_mode.Mode):
     def __init__(self, screen, working_path):
         self.screen = screen
         self.working_path = working_path
-        self.all_plugins = self.get_plugins()
-        self.plugin_statuses = [True] * len(self.all_plugins)
         self.selected_line = 0
         self.threads = []
         self.exit_event = utils.ValueEvent()
         self.change_event = threading.Event()
+        self.vimrc_path = os.path.expanduser('~/.vim/.vimrc')
+        self.all_plugins = self.get_plugins(self.vimrc_path)
+        self.plugin_statuses = [True] * len(self.all_plugins)
+        self.status_lock = threading.Lock()
 
     def run(self):
+        """
+        public inherited method that all methods must have to run
+        :return:
+        """
         y, x = self.screen.getmaxyx()
 
         for i, plugin in enumerate(self.all_plugins):
@@ -46,8 +53,13 @@ class StartupMode(abstract_mode.Mode):
         return self.exit_event.get_value()
 
     def _display_to_screen(self):
+        """
+        display plugins and their statuses along with cursor position, changes when
+        change_event is set
+        :return:
+        """
         y, x = self.screen.getmaxyx()
-        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate']
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'a: Analyze']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i-1]) + 4
@@ -58,12 +70,13 @@ class StartupMode(abstract_mode.Mode):
         self.change_event.set()
         while not self.exit_event.is_set():
             if self.change_event.is_set():
-                for i, status in enumerate(self.plugin_statuses):
-                    s = 'O' if status else 'X'
-                    new_text = s + ' ' + self.all_plugins[i]
-                    self.screen.addstr(i, 0, new_text)
-                    self.screen.noutrefresh()
-                s = 'O' if self.plugin_statuses[self.selected_line] else 'X'
+                with self.status_lock:
+                    for i, status in enumerate(self.plugin_statuses):
+                        s = 'O' if status else 'X'
+                        new_text = s + ' ' + self.all_plugins[i]
+                        self.screen.addstr(i, 0, new_text)
+                        self.screen.noutrefresh()
+                    s = 'O' if self.plugin_statuses[self.selected_line] else 'X'
                 new_text = s + ' ' + self.all_plugins[self.selected_line]
                 self.screen.addstr(self.selected_line, 0, new_text, curses.A_STANDOUT)
                 self.screen.noutrefresh()
@@ -76,6 +89,21 @@ class StartupMode(abstract_mode.Mode):
             self.screen.addstr(0, 0, 'cleaning up')
             self.screen.refresh()
             thread.join()
+
+    def _get_startup(self):
+        vimrc_new_path = os.path.join(self.working_path, 'vimrc')
+        valid_plugins = []
+        with self.status_lock:
+            for i, p in enumerate(self.all_plugins):
+                if self.plugin_statuses[i]:
+                    valid_plugins.append('Plugin ' + p)
+        with open(self.vimrc_path, 'r') as vimrc_orig:
+            with open(vimrc_new_path, 'w') as vimrc_new:
+                for line in vimrc_orig:
+                    if line.startswith('Plugin') and line.rstrip() not in valid_plugins:
+                        continue
+                    else:
+                        vimrc_new.write(line)
 
     def _process_input(self):
         while not self.exit_event.is_set():
@@ -96,15 +124,17 @@ class StartupMode(abstract_mode.Mode):
                         self.selected_line += 1
                         self.change_event.set()
                 elif keypress == 'c':
-                    self.plugin_statuses[self.selected_line] = not self.plugin_statuses[self.selected_line]
+                    with self.status_lock:
+                        self.plugin_statuses[self.selected_line] = not self.plugin_statuses[self.selected_line]
                     self.change_event.set()
+                elif keypress == 'a':
+                    self._get_startup()
                 logging.debug(keypress)
             except curses.error:
                 pass
 
     @staticmethod
-    def get_plugins():
-        vimrc_path = os.path.expanduser('~/.vim/.vimrc')
+    def get_plugins(vimrc_path):
         with open(vimrc_path, 'r') as vimrc:
             plugins = []
             begin_flag = False
@@ -114,6 +144,6 @@ class StartupMode(abstract_mode.Mode):
                 if line.rstrip() == 'call vundle#end()':
                     break
                 if begin_flag:
-                    if line.startswith('Plugin'):
+                    if line.startswith('Plugin') and 'Vundle' not in line:
                         plugins.append(line.split()[1])
         return plugins

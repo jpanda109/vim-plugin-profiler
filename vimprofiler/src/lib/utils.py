@@ -9,7 +9,7 @@ class ValueEvent():
         self.event = threading.Event()
         self.value = value
 
-    def is_set(self, *events):
+    def is_set(self):
         return self.event.is_set()
 
     def set(self, value):

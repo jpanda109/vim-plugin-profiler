@@ -9,6 +9,7 @@ if __name__ == "__main__":
 
     working_path = os.path.dirname(os.path.abspath(__file__))
     myscreen = curses.initscr()
+    curses.start_color()
     myscreen.nodelay(1)
     try:
         curses.noecho()

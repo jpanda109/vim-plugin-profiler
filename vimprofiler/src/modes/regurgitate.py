@@ -38,6 +38,7 @@ class RegurgitateMode(abstract_mode.Mode):
         self.screen = screen
         self.working_path = working_path
         self.exit_event = utils.ValueEvent()
+        self.vim_quit_event = threading.Event()
         self.interval = 1
         self.display_queue = queue.Queue()
         self.pipe_name = os.path.join(self.working_path, 'tmpfifo')
@@ -59,7 +60,7 @@ class RegurgitateMode(abstract_mode.Mode):
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
         time.sleep(self.interval)
-        while not self.exit_event.is_set():
+        while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
             with open(proc_file_name, 'r') as proc_file:
                 stats = proc_file.readline().split(' ')
             with open(time_file_name, 'r') as time_file:
@@ -130,6 +131,33 @@ class RegurgitateMode(abstract_mode.Mode):
         conn.commit()
         conn.close()
 
+    def _check_status(self):
+        while not self.exit_event.is_set():
+            try:
+                os.kill(self.proc, 0)
+            except OSError:
+                self.vim_quit_event.set()
+
+    def _analyze_profile(self):
+        if not self.vim_quit_event.is_set():
+            return
+
+        profile_path = os.path.join(self.working_path, 'profile.log')
+        with open(profile_path) as profile:
+            lines = []
+            begin = False
+            for line in profile:
+                if line.rstrip() == 'FUNCTIONS SORTED ON TOTAL TIME':
+                    begin = True
+                    continue
+                if begin:
+                    if line.rstrip() == '':
+                        begin = False
+                    else:
+                        lines.append(line.rstrip())
+        for l in lines:
+            self.display_queue.put(l)
+
     def _process_input(self):
 
         """
@@ -147,6 +175,8 @@ class RegurgitateMode(abstract_mode.Mode):
                     self.exit_event.set(1)
                 if keypress == '2':
                     self.exit_event.set(2)
+                if keypress == 'a':
+                    self._analyze_profile()
             except curses.error:
                 pass
 
@@ -166,20 +196,11 @@ class RegurgitateMode(abstract_mode.Mode):
             os.kill(self.proc, 9)
         except OSError:
             pass
-        try:
-            os.remove(self.pipe_name)
-        except OSError:
-            pass
-        try:
-            swap_file_path = os.path.join(self.working_path, '.swp')
-            os.remove(swap_file_path)
-        except OSError:
-            pass
-        try:
-            profile_path = os.path.join(self.working_path, 'profile.log')
-            os.remove(profile_path)
-        except OSError:
-            pass
+        utils.remove_file(self.pipe_name)
+        swap_file_path = os.path.join(self.working_path, '.swp')
+        utils.remove_file(swap_file_path)
+        profile_path = os.path.join(self.working_path, 'profile.log')
+        utils.remove_file(profile_path)
 
     def run(self):
 
@@ -205,6 +226,8 @@ class RegurgitateMode(abstract_mode.Mode):
         self.threads.append(threading.Thread(target=self._load_commands,
                                              daemon=True))
         self.threads.append(threading.Thread(target=self._display_to_screen,
+                                             daemon=True))
+        self.threads.append(threading.Thread(target=self._check_status,
                                              daemon=True))
         for thread in self.threads:
             thread.start()

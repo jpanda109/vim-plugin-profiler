@@ -1,4 +1,5 @@
 import threading
+import os
 
 
 class ValueEvent():
@@ -26,3 +27,10 @@ class ValueEvent():
 
     def get_value(self):
         return self.value
+
+
+def remove_file(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass

@@ -154,7 +154,10 @@ class StartupMode(abstract_mode.Mode):
                               .stdout.read().decode('utf-8').rstrip())
             os.kill(int(proc), 9)
             swap_file_path = os.path.join(self.working_path, '.swp')
-            os.remove(swap_file_path)
+            try:
+                os.remove(swap_file_path)
+            except OSError:
+                pass
 
             # gather source info from startuptime file
             source_times = []

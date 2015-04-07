@@ -148,6 +148,7 @@ class StartupMode(abstract_mode.Mode):
                     for line in startup_file:
                         pass
                     if 'VIM STARTED' in line:
+                        total_elapsed_time = line
                         break
             proc = (subprocess.Popen(['pgrep', '-f', vim_command[:7]],
                                      stdout=subprocess.PIPE)
@@ -172,6 +173,7 @@ class StartupMode(abstract_mode.Mode):
 
             # sort and place info into analysis queue
             source_times.sort(key=lambda s_line: float(s_line.split(' ')[2]))
+            source_times.insert(0, total_elapsed_time)
             self.analysis_queue.put(source_times)
             self.analysis_event.set()
             os.remove(vimrc_new_path)

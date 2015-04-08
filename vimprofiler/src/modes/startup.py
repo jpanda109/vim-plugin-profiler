@@ -66,12 +66,12 @@ class StartupMode(abstract_mode.Mode):
         :return:
         """
         y, x = self.screen.getmaxyx()
-        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate']
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: iterations']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i-1]) + 4
             col += prev_col
-            self.screen.addstr(y - 2, col, commands[i])
+            self.screen.addstr(y - 3, col, commands[i])
             prev_col = col
 
         self.change_event.set()
@@ -207,9 +207,21 @@ class StartupMode(abstract_mode.Mode):
                     self.change_event.set()
                 elif keypress == 's':  # send analysis request for currently selected plugins
                     self._get_startup()
+                elif keypress == 'i':
+                    stream = self._get_stream_input()
                 logging.debug(keypress)
             except curses.error:
                 pass
+
+    def _get_stream_input(self):
+        self.screen.nodelay(0)  # make IO blocking for now
+        stream = ''
+        while True:
+            keypress = self.screen.getkey()
+            if keypress == 'ENTER':
+                return stream
+            else:
+                stream += keypress
 
     @staticmethod
     def get_plugins(vimrc_path):

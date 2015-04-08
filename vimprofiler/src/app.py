@@ -21,7 +21,7 @@ def main(screen, working_path):
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4
             col += prev_col
-            screen.addstr(y - 1, col, commands[i])
+            screen.addstr(y - 2, col, commands[i])
             prev_col = col
         # switch modes
         if next_mode == 1:

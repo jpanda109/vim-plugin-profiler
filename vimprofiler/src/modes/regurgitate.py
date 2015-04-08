@@ -177,8 +177,32 @@ class RegurgitateMode(abstract_mode.Mode):
                     self.exit_event.set(2)
                 if keypress == 'a':
                     self._analyze_profile()
+                if keypress == 'i':
+                    stream = self._get_stream_input(keypress)
+                    logging.debug('stream: ' + stream)
+                    if stream.isdigit():
+                        self.interval = stream
             except curses.error:
                 pass
+
+    def _get_stream_input(self, command_key):
+        self.screen.nodelay(0)  # make IO blocking for now
+        y, x = self.screen.getmaxyx()
+        stream = ''
+        self.screen.addstr(y-1, 0, command_key + ':')
+        self.screen.refresh()
+        while True:
+            keypress = self.screen.getkey()
+            logging.debug('keypress: ' + keypress)
+            if keypress == 'Enter':
+                self.screen.move(y-1, 0)
+                self.screen.clrtoeol()
+                self.screen.refresh()
+                return stream
+            else:
+                stream += keypress
+                self.screen.addstr(y-1, 2, stream)
+                self.screen.refresh()
 
     def _exit_mode(self):
 
@@ -210,12 +234,12 @@ class RegurgitateMode(abstract_mode.Mode):
 
         # display mode specific commands on line y - 2
         y, x = self.screen.getmaxyx()
-        commands = ['a: Analyze', 'o: Open']
+        commands = ['a: Analyze', 'o: Open', 'i: interval']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4
             col += prev_col
-            self.screen.addstr(y - 2, col, commands[i])
+            self.screen.addstr(y - 3, col, commands[i])
             prev_col = col
 
         # initialize threads and synchronization items

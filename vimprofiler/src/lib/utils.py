@@ -34,3 +34,11 @@ def remove_file(path):
         os.remove(path)
     except OSError:
         pass
+
+
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False

@@ -180,8 +180,8 @@ class RegurgitateMode(abstract_mode.Mode):
                 if keypress == 'i':
                     stream = self._get_stream_input(keypress)
                     logging.debug('stream: ' + stream)
-                    if stream.isdigit():
-                        self.interval = stream
+                    if utils.is_float(stream):
+                        self.interval = float(stream)
             except curses.error:
                 pass
 
@@ -193,11 +193,11 @@ class RegurgitateMode(abstract_mode.Mode):
         self.screen.refresh()
         while True:
             keypress = self.screen.getkey()
-            logging.debug('keypress: ' + keypress)
-            if keypress == 'Enter':
+            if keypress == '\n':  # capture enter key
                 self.screen.move(y-1, 0)
                 self.screen.clrtoeol()
                 self.screen.refresh()
+                logging.debug('stream: ' + repr(stream))
                 return stream
             else:
                 stream += keypress

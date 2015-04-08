@@ -1,4 +1,7 @@
 import abc
+import logging
+
+logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
 class Mode(object):
@@ -8,6 +11,29 @@ class Mode(object):
 
     __metaclass__ = abc.ABCMeta
 
+    def __init__(self, screen, working_path):
+        self.screen = screen
+        self.working_path = working_path
+
     @abc.abstractmethod
     def run(self):
         pass
+
+    def _get_stream_input(self, command):
+        self.screen.nodelay(0)  # make IO blocking for now
+        y, x = self.screen.getmaxyx()
+        stream = ''
+        self.screen.addstr(y-1, 0, command + ':')
+        self.screen.refresh()
+        while True:
+            keypress = self.screen.getkey()
+            if keypress == '\n':  # capture enter key
+                self.screen.move(y-1, 0)
+                self.screen.clrtoeol()
+                self.screen.refresh()
+                logging.debug('stream: ' + repr(stream))
+                return stream
+            else:
+                stream += keypress
+                self.screen.addstr(y-1, 2, stream)
+                self.screen.refresh()

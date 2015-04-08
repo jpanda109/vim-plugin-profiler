@@ -35,8 +35,7 @@ class RegurgitateMode(abstract_mode.Mode):
         :param working_path: path where things like plugin.vim is stored
         :return:
         """
-        self.screen = screen
-        self.working_path = working_path
+        super().__init__(screen=screen, working_path=working_path)
         self.exit_event = utils.ValueEvent()
         self.vim_quit_event = threading.Event()
         self.interval = 1
@@ -184,25 +183,6 @@ class RegurgitateMode(abstract_mode.Mode):
                         self.interval = float(stream)
             except curses.error:
                 pass
-
-    def _get_stream_input(self, command_key):
-        self.screen.nodelay(0)  # make IO blocking for now
-        y, x = self.screen.getmaxyx()
-        stream = ''
-        self.screen.addstr(y-1, 0, command_key + ':')
-        self.screen.refresh()
-        while True:
-            keypress = self.screen.getkey()
-            if keypress == '\n':  # capture enter key
-                self.screen.move(y-1, 0)
-                self.screen.clrtoeol()
-                self.screen.refresh()
-                logging.debug('stream: ' + repr(stream))
-                return stream
-            else:
-                stream += keypress
-                self.screen.addstr(y-1, 2, stream)
-                self.screen.refresh()
 
     def _exit_mode(self):
 

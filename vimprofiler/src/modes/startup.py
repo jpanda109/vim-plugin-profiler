@@ -22,8 +22,7 @@ class StartupMode(abstract_mode.Mode):
         :param working_path: working path of where youw ant to store stuff
         :return:
         """
-        self.screen = screen
-        self.working_path = working_path
+        super().__init__(screen=screen, working_path=working_path)
         self.selected_line = 0  # highlights line selected by user (for toggling plugins)
         self.threads = []  # threads being managed by mode
         self.exit_event = utils.ValueEvent()  # signals when to terminate program
@@ -212,16 +211,6 @@ class StartupMode(abstract_mode.Mode):
                 logging.debug(keypress)
             except curses.error:
                 pass
-
-    def _get_stream_input(self):
-        self.screen.nodelay(0)  # make IO blocking for now
-        stream = ''
-        while True:
-            keypress = self.screen.getkey()
-            if keypress == 'ENTER':
-                return stream
-            else:
-                stream += keypress
 
     @staticmethod
     def get_plugins(vimrc_path):

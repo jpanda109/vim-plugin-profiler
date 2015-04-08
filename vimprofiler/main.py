@@ -2,14 +2,13 @@ import curses
 import os
 from src.lib import utils
 import src.app as app
+# from .src import app
 
 
 if __name__ == "__main__":
 
     """ simple where the curses screen and working path are set """
 
-    working_path = os.path.dirname(os.path.abspath(__file__))
-    utils.remove_file(os.path.join(working_path, 'tmpfifo'))
     myscreen = curses.initscr()
     curses.start_color()
     myscreen.nodelay(1)

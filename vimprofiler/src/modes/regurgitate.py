@@ -247,6 +247,7 @@ class RegurgitateMode(abstract_mode.Mode):
         plugin_file = os.path.join(working_path, 'plugin.vim')
 
         # lay em with the pipe
+        utils.remove_file(pipe_name)
         os.mkfifo(pipe_name)
 
         # create the vim command that opens up vim instance in new terminal

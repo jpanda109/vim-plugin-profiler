@@ -131,6 +131,12 @@ class RegurgitateMode(abstract_mode.Mode):
         conn.close()
 
     def _check_status(self):
+
+        """
+        checks whether or not the vim process is still alive
+        :return:
+        """
+
         while not self.exit_event.is_set():
             try:
                 os.kill(self.proc, 0)
@@ -138,6 +144,12 @@ class RegurgitateMode(abstract_mode.Mode):
                 self.vim_quit_event.set()
 
     def _analyze_profile(self):
+
+        """
+        analyzes top 10 or so function calls, sorted by total time spent on each function call
+        :return:
+        """
+
         if not self.vim_quit_event.is_set():
             return
 
@@ -243,6 +255,14 @@ class RegurgitateMode(abstract_mode.Mode):
 
     @staticmethod
     def initialize_vim(working_path, pipe_name):
+
+        """
+        Initialize the vim process along with creating a named pipe to communicate with it
+        :param working_path: working path of main.py and other files
+        :param pipe_name: pathname of pipe to be created
+        :return: pid of vim process
+        """
+
         # file initializations relative to working paths
         plugin_file = os.path.join(working_path, 'plugin.vim')
 

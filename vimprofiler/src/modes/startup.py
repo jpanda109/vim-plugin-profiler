@@ -100,10 +100,12 @@ class StartupMode(abstract_mode.Mode):
                 self.analysis_event.clear()
 
     def _exit_mode(self):
+
         """
         clean up threads and other weird stuff
         :return:
         """
+
         for thread in self.threads:
             self.screen.clear()
             self.screen.addstr(0, 0, 'cleaning up')

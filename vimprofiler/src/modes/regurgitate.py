@@ -60,6 +60,8 @@ class RegurgitateMode(abstract_mode.Mode):
         time_prev = sum(map(float, time_stats))
         time.sleep(self.interval)
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
+
+            # get all the needed info
             with open(proc_file_name, 'r') as proc_file:
                 stats = proc_file.readline().split(' ')
             with open(time_file_name, 'r') as time_file:
@@ -69,6 +71,7 @@ class RegurgitateMode(abstract_mode.Mode):
             cutime_next = float(stats[15])
             cstime_next = float(stats[16])
 
+            # calcurations
             time_next = sum(map(float, time_stats))
             seconds = time_next - time_prev
 
@@ -76,9 +79,11 @@ class RegurgitateMode(abstract_mode.Mode):
             total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
             cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
-            self.display_queue.put(cpu_usage)
+            # place into display queue so another thread can handle
+            self.display_queue.put('{:.2%}'.format(cpu_usage))
             time.sleep(self.interval)
 
+            # get ready for next  iteration
             utime_prev = utime_next
             stime_prev = stime_next
             cutime_prev = cutime_next

@@ -31,7 +31,7 @@ class StartupMode(abstract_mode.Mode):
         self.change_event = threading.Event()  # signals change due to user input
         self.analysis_event = threading.Event()  # signals an analysis request was sent
         self.vimrc_path = os.path.expanduser('~/.vim/.vimrc')  # path to user's vimrc
-        self.all_plugins = self.get_plugins(self.vimrc_path)  # all plugins originally sourced by user
+        self.all_plugins = []  # all plugins originally sourced by user
         self.plugin_statuses = [True] * len(self.all_plugins)  # indicates which plugins currently sourced
         self.status_lock = threading.Lock()  # lock for modifying and viewing statuses
         self.startup_lock = threading.Lock()  # lock for startup analysis (file modification)
@@ -43,6 +43,10 @@ class StartupMode(abstract_mode.Mode):
         public inherited method that all methods must have to run
         :return: the next mode, which is returned when the mode if done running, based on exit_event
         """
+
+        self._prompt_vimrc()
+        self.all_plugins = self.get_plugins(self.vimrc_path)  # all plugins originally sourced by user
+        self.plugin_statuses = [True] * len(self.all_plugins)  # indicates which plugins currently sourced
 
         y, x = self.screen.getmaxyx()
 
@@ -116,6 +120,15 @@ class StartupMode(abstract_mode.Mode):
             self.screen.addstr(0, 0, 'cleaning up')
             self.screen.refresh()
             thread.join()
+
+    def _prompt_vimrc(self):
+        while not os.path.isfile(self.vimrc_path):
+            stream_input = self._get_stream_input('Please enter your vimrc path')
+            if stream_input.lower() == 'quit' or stream_input.lower() == 'q':
+                self.exit_event.set(0)
+                break
+            else:
+                self.vimrc_path = stream_input
 
     def _get_startup(self):
 
@@ -218,7 +231,7 @@ class StartupMode(abstract_mode.Mode):
                 elif keypress == 's':  # send analysis request for currently selected plugins
                     self._get_startup()
                 elif keypress == 'i':
-                    stream = self._get_stream_input()
+                    stream = self._get_stream_input(keypress)
                 logging.debug(keypress)
             except curses.error:
                 pass

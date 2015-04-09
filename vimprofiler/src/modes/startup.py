@@ -50,8 +50,9 @@ class StartupMode(abstract_mode.Mode):
 
         y, x = self.screen.getmaxyx()
 
-        for i, plugin in enumerate(self.all_plugins):
-            self.screen.addstr(i, 2, plugin)
+        with self.screen_lock:
+            for i, plugin in enumerate(self.all_plugins):
+                self.screen.addstr(i, 2, plugin)
         self.screen.refresh()
 
         self.threads.append(threading.Thread(target=self._process_input,
@@ -76,35 +77,40 @@ class StartupMode(abstract_mode.Mode):
         y, x = self.screen.getmaxyx()
         commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: iterations', 'p: path']
         prev_col = 0
-        for i in range(len(commands)):
-            col = 0 if i == 0 else len(commands[i-1]) + 4
-            col += prev_col
-            self.screen.addstr(y - 3, col, commands[i])
-            prev_col = col
+        with self.screen_lock:
+            for i in range(len(commands)):
+                col = 0 if i == 0 else len(commands[i-1]) + 4
+                col += prev_col
+                self.screen.addstr(y - 3, col, commands[i])
+                prev_col = col
 
         self.change_event.set()
         while not self.exit_event.is_set():
             if self.change_event.is_set():
                 # deal with user input changes
                 with self.status_lock:
-                    for i, status in enumerate(self.plugin_statuses):
-                        s = 'O' if status else 'X'
-                        new_text = s + ' ' + self.all_plugins[i]
-                        self.screen.addstr(i, 0, new_text)
-                        self.screen.noutrefresh()
+                    with self.screen_lock:
+                        for i, status in enumerate(self.plugin_statuses):
+                            s = 'O' if status else 'X'
+                            new_text = s + ' ' + self.all_plugins[i]
+                            self.screen.addstr(i, 0, new_text)
+                            self.screen.noutrefresh()
                     s = 'O' if self.plugin_statuses[self.selected_line] else 'X'
                 new_text = s + ' ' + self.all_plugins[self.selected_line]
-                self.screen.addstr(self.selected_line, 0, new_text, curses.A_STANDOUT)
-                self.screen.noutrefresh()
-                curses.doupdate()
+                with self.screen_lock:
+                    self.screen.addstr(self.selected_line, 0, new_text, curses.A_STANDOUT)
+                self.screen.refresh()
+                # self.screen.noutrefresh()
+                # curses.doupdate()
                 self.change_event.clear()
             if self.analysis_event.is_set():
                 # deal with startup analysis requests
                 while not self.analysis_queue.empty():
                     source_times = self.analysis_queue.get()
-                for i in range(10):
-                    self.screen.addstr(i + 10, 0, source_times[i])
-                    self.screen.noutrefresh()
+                with self.screen_lock:
+                    for i in range(10):
+                        self.screen.addstr(i + 10, 0, source_times[i])
+                        self.screen.noutrefresh()
                 curses.doupdate()
                 self.analysis_event.clear()
 
@@ -116,9 +122,10 @@ class StartupMode(abstract_mode.Mode):
         """
 
         for thread in self.threads:
-            self.screen.clear()
-            self.screen.addstr(0, 0, 'cleaning up')
-            self.screen.refresh()
+            with self.screen_lock:
+                self.screen.clear()
+                self.screen.addstr(0, 0, 'cleaning up')
+                self.screen.refresh()
             thread.join()
 
     def _prompt_vimrc(self):

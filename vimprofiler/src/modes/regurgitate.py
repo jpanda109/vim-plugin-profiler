@@ -97,17 +97,19 @@ class RegurgitateMode(abstract_mode.Mode):
         :return:
         """
 
-        y, x = self.screen.getmaxyx()
-        display_deque = collections.deque(maxlen=y-4)
+        with self.screen_lock:
+            y, x = self.screen.getmaxyx()
+            display_deque = collections.deque(maxlen=y-4)
         while not self.exit_event.is_set():
             if not self.display_queue.empty():
                 display_deque.append(self.display_queue.get())
                 curses.setsyx(0, 0)
-                for i, item in enumerate(display_deque):
-                    self.screen.clrtoeol()
-                    self.screen.addstr(i, 0, str(item)[:x-2])
-                    self.screen.noutrefresh()
-                curses.doupdate()
+                with self.screen_lock:
+                    for i, item in enumerate(display_deque):
+                        self.screen.clrtoeol()
+                        self.screen.addstr(i, 0, str(item)[:x-2])
+                        self.screen.noutrefresh()
+                    curses.doupdate()
 
     def _load_commands(self):
 
@@ -209,9 +211,10 @@ class RegurgitateMode(abstract_mode.Mode):
         """
 
         for thread in self.threads:
-            self.screen.clear()
-            self.screen.addstr(0, 0, 'cleaning up')
-            self.screen.refresh()
+            with self.screen_lock:
+                self.screen.clear()
+                self.screen.addstr(0, 0, 'cleaning up')
+                self.screen.refresh()
             thread.join()
         try:
             os.kill(self.proc, 9)
@@ -236,7 +239,8 @@ class RegurgitateMode(abstract_mode.Mode):
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4
             col += prev_col
-            self.screen.addstr(y - 3, col, commands[i])
+            with self.screen_lock:
+                self.screen.addstr(y - 3, col, commands[i])
             prev_col = col
 
         # initialize threads and synchronization items

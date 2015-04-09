@@ -33,7 +33,13 @@ class Mode(object):
                 self.screen.refresh()
                 logging.debug('stream: ' + repr(stream))
                 return stream
-            else:
-                stream += keypress
-                self.screen.addstr(y-1, 2, stream)
+            else:  # contains any modification to input
+                if keypress == '\x7f':  # capture backspace key
+                    if len(stream) > 0:
+                        stream = stream[:-1]
+                else:
+                    stream += keypress
+                self.screen.move(y-1, 0)
+                self.screen.clrtoeol()
+                self.screen.addstr(y-1, 0, command + ':' + stream)
                 self.screen.refresh()

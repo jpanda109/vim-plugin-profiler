@@ -1,3 +1,5 @@
+import threading
+
 # user-defined imports
 from .modes import regurgitate
 from .modes import startup
@@ -11,6 +13,7 @@ def main(screen, working_path):
 
     y, x = screen.getmaxyx()
     commands = ['q: Quit', '1: Regurgitate', '2: Startup']
+    screen_lock = threading.Lock()
 
     # fencepost: first mode to be run
     next_mode = 1
@@ -25,9 +28,9 @@ def main(screen, working_path):
             prev_col = col
         # switch modes
         if next_mode == 1:
-            mode = regurgitate.RegurgitateMode(screen, working_path)
+            mode = regurgitate.RegurgitateMode(screen, working_path, screen_lock)
         elif next_mode == 2:
-            mode = startup.StartupMode(screen, working_path)
+            mode = startup.StartupMode(screen, working_path, screen_lock)
         else:
-            mode = regurgitate.RegurgitateMode(screen, working_path)
+            mode = regurgitate.RegurgitateMode(screen, working_path, screen_lock)
         next_mode = mode.run()

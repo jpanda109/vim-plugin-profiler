@@ -27,7 +27,7 @@ desktop_env = os.environ.get('DESKTOP_SESSION')
 
 class RegurgitateMode(abstract_mode.Mode):
 
-    def __init__(self, screen, working_path):
+    def __init__(self, screen, working_path, screen_lock):
 
         """
         Initializes this mode
@@ -35,7 +35,7 @@ class RegurgitateMode(abstract_mode.Mode):
         :param working_path: path where things like plugin.vim is stored
         :return:
         """
-        super().__init__(screen=screen, working_path=working_path)
+        super().__init__(screen=screen, working_path=working_path, screen_lock=screen_lock)
         self.exit_event = utils.ValueEvent()  # event signaling when threads should end
         self.vim_quit_event = threading.Event()  # event signaling when the vim process is done
         self.interval = 1  # interval of cpu calculations

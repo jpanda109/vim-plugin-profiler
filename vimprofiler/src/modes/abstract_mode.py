@@ -11,9 +11,10 @@ class Mode(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, screen, working_path):
-        self.screen = screen
-        self.working_path = working_path
+    def __init__(self, screen, working_path, screen_lock):
+        self.screen = screen  # curses screen
+        self.working_path = working_path  # working path of stuff
+        self.screen_lock = screen_lock  # a lock that controls access to the display screen
 
     @abc.abstractmethod
     def run(self):

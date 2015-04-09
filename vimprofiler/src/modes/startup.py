@@ -15,7 +15,7 @@ logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 class StartupMode(abstract_mode.Mode):
 
-    def __init__(self, screen, working_path):
+    def __init__(self, screen, working_path, screen_lock):
 
         """
         initialize mode to be run by main application
@@ -24,7 +24,7 @@ class StartupMode(abstract_mode.Mode):
         :return:
         """
 
-        super().__init__(screen=screen, working_path=working_path)
+        super().__init__(screen=screen, working_path=working_path, screen_lock=screen_lock)
         self.selected_line = 0  # highlights line selected by user (for toggling plugins)
         self.threads = []  # threads being managed by mode
         self.exit_event = utils.ValueEvent()  # signals when to terminate program

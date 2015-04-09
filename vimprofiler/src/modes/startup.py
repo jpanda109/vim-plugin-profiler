@@ -74,7 +74,7 @@ class StartupMode(abstract_mode.Mode):
         """
 
         y, x = self.screen.getmaxyx()
-        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: iterations']
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: iterations', 'p: path']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i-1]) + 4
@@ -232,6 +232,14 @@ class StartupMode(abstract_mode.Mode):
                     self._get_startup()
                 elif keypress == 'i':
                     stream = self._get_stream_input(keypress)
+                elif keypress == 'p':
+                    while True:
+                        stream_input = self._get_stream_input(keypress)
+                        if stream_input.lower() == 'cancel':
+                            break
+                        elif os.path.isfile(stream_input):
+                            self.vimrc_path = stream_input
+                            break
                 logging.debug(keypress)
             except curses.error:
                 pass

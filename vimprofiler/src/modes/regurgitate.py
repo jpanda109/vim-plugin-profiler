@@ -36,13 +36,13 @@ class RegurgitateMode(abstract_mode.Mode):
         :return:
         """
         super().__init__(screen=screen, working_path=working_path)
-        self.exit_event = utils.ValueEvent()
-        self.vim_quit_event = threading.Event()
-        self.interval = 1
-        self.display_queue = queue.Queue()
-        self.pipe_name = os.path.join(self.working_path, 'tmpfifo')
-        self.proc = self.initialize_vim(self.working_path, self.pipe_name)
-        self.threads = []
+        self.exit_event = utils.ValueEvent()  # event signaling when threads should end
+        self.vim_quit_event = threading.Event()  # event signaling when the vim process is done
+        self.interval = 1  # interval of cpu calculations
+        self.display_queue = queue.Queue()  # atomic queue for displaying info
+        self.pipe_name = os.path.join(self.working_path, 'tmpfifo')  # pathname named pipe
+        self.proc = self.initialize_vim(self.working_path, self.pipe_name)  # pid of vim process
+        self.threads = []  # list of threads
 
     def _calculate_cpu(self):
 

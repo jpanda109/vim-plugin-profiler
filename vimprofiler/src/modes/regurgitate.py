@@ -60,10 +60,10 @@ class RegurgitateMode(abstract_mode.Mode):
         time_prev = sum(map(float, time_stats))
         #time.sleep(self.interval)
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
-            prev_self_int = self.interval
+            prev = self.interval
             for i in range(round(self.interval*10)):
                 time.sleep(0.1)
-                if prev_self_int != self.interval:
+                if prev != self.interval and prev > self.interval:
                     break;
 
             # get all the needed info

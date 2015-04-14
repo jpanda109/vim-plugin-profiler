@@ -12,10 +12,13 @@ command = vim.eval('a:command')
 #    myfunc.my_var = True
 #    myfunc.starttime = time.time()
 
+start_time = time.time()
+#but the following code only runs once, not a loop. hm.
+
 
 with open('tmpfifo', 'w') as pipe:
     data = {
-        'time': time.time(), #- myfunc.starttime,
+        'time': time.time() - start_time,
         'command': command,
     }
     data_string = json.dumps(data, pipe) + '\n'

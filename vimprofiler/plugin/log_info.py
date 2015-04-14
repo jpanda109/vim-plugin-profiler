@@ -5,8 +5,6 @@ import json
 command = vim.eval('a:command')
 start_time = vim.eval('a:start_time')
 
-#start_time = time.time()
-
 with open('tmpfifo', 'w') as pipe:
     data = {
         'time': time.time() - float(start_time),

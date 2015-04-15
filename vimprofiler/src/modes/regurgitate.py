@@ -218,7 +218,7 @@ class RegurgitateMode(abstract_mode.Mode):
         for thread in self.threads:
             with self.screen_lock:
                 self.screen.clear()
-                self.screen.addstr(0, 0, 'cleaning up')
+                self.screen.addstr(0, 0, 'Cleaning up...')
                 self.screen.refresh()
             thread.join()
         try:
@@ -239,7 +239,7 @@ class RegurgitateMode(abstract_mode.Mode):
 
         # display mode specific commands on line y - 2
         y, x = self.screen.getmaxyx()
-        commands = ['a: Analyze', 'o: Open', 'i: interval']
+        commands = ['a: Analyze', 'o: Open', 'i: Interval']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4

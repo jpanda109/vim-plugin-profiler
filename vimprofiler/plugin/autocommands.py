@@ -8,4 +8,5 @@ start_time = time.time()
 
 for command in commands:
     command = command.rstrip()
-    vim.command("autocmd " + command + " * :call VPLogInfo('" + command + "','" + str(start_time) + "')")
+    vim.command("autocmd " + command + " * :call VPLogInfo('" 
+        + command + "','" + str(start_time) + "')")

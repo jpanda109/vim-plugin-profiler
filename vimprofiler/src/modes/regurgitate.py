@@ -306,9 +306,7 @@ class RegurgitateMode(abstract_mode.Mode):
         vim_command = ('vim -S %r -c %r' % (plugin_file, startup_command))
 
         # send command to open up new process, wait for command process to die
-        # before getting the pid of the actual vim process (this is like a
-        # super jank way of doing it but oh well (no i'm not closing these
-        # parentheses
+        # before getting the pid of the actual vim process
         args = [env_command[desktop_env], '-e', vim_command]
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)

@@ -58,7 +58,6 @@ class RegurgitateMode(abstract_mode.Mode):
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
-        #time.sleep(self.interval)
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
             prev = self.interval
             for i in range(round(self.interval*10)):
@@ -76,7 +75,7 @@ class RegurgitateMode(abstract_mode.Mode):
             cutime_next = float(stats[15])
             cstime_next = float(stats[16])
 
-            # calcurations
+            # calculations
             time_next = sum(map(float, time_stats))
             seconds = time_next - time_prev
 
@@ -86,7 +85,6 @@ class RegurgitateMode(abstract_mode.Mode):
 
             # place into display queue so another thread can handle
             self.display_queue.put('{:.2%}'.format(cpu_usage))
-            #time.sleep(self.interval)
 
             # get ready for next  iteration
             utime_prev = utime_next
@@ -119,7 +117,7 @@ class RegurgitateMode(abstract_mode.Mode):
     def _load_commands(self):
 
         """
-        get commands from vim process through pipe, and act accordingly
+        get commands from vim process through pipe, puts it in display queue
         :return:
         """
 
@@ -136,9 +134,12 @@ class RegurgitateMode(abstract_mode.Mode):
                 if line.rstrip() == '':
                     continue
                 command = json.loads(line, encoding='utf-8')
-                self.display_queue.put(command)
                 c.execute('INSERT INTO commands VALUES (?,?)',
                           (command['time'], command['command']))
+                mystr = str(command)
+                mystr.replace("'command'", "Command Name", 1)
+                mystr.replace("'time' ", "Time", 1)
+                self.display_queue.put(mystr)
         conn.commit()
         conn.close()
 

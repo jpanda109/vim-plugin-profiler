@@ -142,7 +142,13 @@ class RegurgitateMode(abstract_mode.Mode):
                 str1 = str(command)
                 str2 = str1.replace("'command'", "Command Name", 1)
                 str3 = str2.replace("'time'", "Time", 1)
-                str4 = str3[:(str3.find("T")+13)] + str3[str3.find(","):]
+                if str3[1] == "T":
+                    str4 = str3[:(str3.find("Time")+13)] + str3[str3.find(","):]
+                    #str4 = str3[str3.find(","):]
+                elif str3[1] == "C":
+                    str4 = str3[:(str3.find("Time")+13)]
+                else:
+                    str4 = " ERROR " 
                 my_list = list(str4)
                 my_list.pop()
                 my_list.pop(0)

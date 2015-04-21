@@ -15,9 +15,10 @@ def main(screen, working_path):
     commands = ['q: Quit', '1: Regurgitate', '2: Startup']
     screen_lock = threading.RLock()
 
-    # fencepost: first mode to be run
     next_mode = 1
+
     while next_mode != 0:
+
         # print the base commands (quit and modes)
         screen.clear()
         prev_col = 0
@@ -26,6 +27,7 @@ def main(screen, working_path):
             col += prev_col
             screen.addstr(y - 2, col, commands[i])
             prev_col = col
+
         # switch modes
         if next_mode == 1:
             mode = regurgitate.RegurgitateMode(screen, working_path, screen_lock)

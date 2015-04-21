@@ -248,8 +248,9 @@ class RegurgitateMode(abstract_mode.Mode):
 
     def run(self):
 
-        """ main function for this mode
-        :return the mode that should be switched to
+        """
+        main function for this mode
+        :return: the mode that should be switched to
         """
 
         # display mode specific commands on line y - 2
@@ -264,16 +265,16 @@ class RegurgitateMode(abstract_mode.Mode):
             prev_col = col
 
         # initialize threads and synchronization items
-        self.threads.append(threading.Thread(target=self._process_input,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._calculate_cpu,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._load_commands,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._display_to_screen,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._check_status,
-                                             daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._process_input, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._calculate_cpu, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._load_commands, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._display_to_screen, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._check_status, daemon=True))
         for thread in self.threads:
             thread.start()
 

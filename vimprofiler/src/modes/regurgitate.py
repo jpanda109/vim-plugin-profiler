@@ -136,10 +136,18 @@ class RegurgitateMode(abstract_mode.Mode):
                 command = json.loads(line, encoding='utf-8')
                 c.execute('INSERT INTO commands VALUES (?,?)',
                           (command['time'], command['command']))
-                mystr = str(command)
-                mystr.replace("'command'", "Command Name", 1)
-                mystr.replace("'time' ", "Time", 1)
-                self.display_queue.put(mystr)
+
+                #sorry, i know this is disastrously inefficient
+                #i dont know python okay
+                str1 = str(command)
+                str2 = str1.replace("'command'", "Command Name", 1)
+                str3 = str2.replace("'time'", "Time", 1)
+                str4 = str3[:(str3.find("T")+13)] + str3[str3.find(","):]
+                my_list = list(str4)
+                my_list.pop()
+                my_list.pop(0)
+                str5 = "".join(my_list)
+                self.display_queue.put(str5)
         conn.commit()
         conn.close()
 

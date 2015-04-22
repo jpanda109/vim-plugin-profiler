@@ -55,28 +55,34 @@ class RegurgitateMode(abstract_mode.Mode):
         stime_prev = 0
         cutime_prev = 0
         cstime_prev = 0
+
+            proctotal = 0
+            cputotal = 0
+            prev_proc = 0
+            prev_cpu = 0
+
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
             prev = self.interval
+            #First, sleep for an interval.
+            #Looping increments to check interval change
             for i in range(round(self.interval*10)):
                 time.sleep(0.1)
                 if prev != self.interval and prev > self.interval:
                     break
 
             # get all the needed info
-            #with open(proc_file_name, 'r') as proc_file:
-            #    stats = proc_file.readline().split(' ')
-            #with open(time_file_name, 'r') as time_file:
-            #    time_stats = time_file.readline().split(' ')[2:]
+            with open(proc_file_name, 'r') as proc_file:
+                stats = proc_file.readline().split(' ')
+            with open(time_file_name, 'r') as time_file:
+                time_stats = time_file.readline().split(' ')
+
             #utime_next = float(stats[13])
             #stime_next = float(stats[14])
             #cutime_next = float(stats[15])
             #cstime_next = float(stats[16])
-
-            proctotal = 0
-            cputotal = 0
             cpu_total = 0 #the previous one is a temp var. rename later
             with open(proc_file_name, 'r') as proc_file:
                 proc_times = proc_file.readline()
@@ -90,9 +96,6 @@ class RegurgitateMode(abstract_mode.Mode):
                     i = int(i)
                     cputotal = (cputotal + i)
                 cpu_total = float(cputotal)
-
-            prev_proc = 0
-            prev_cpu = 0
 
             #pid = str(os.getpid())
             #proc = subprocess.Popen("top -p %s -b -n 1 | grep -w mysql | awk '{print $9}'"
@@ -117,7 +120,7 @@ class RegurgitateMode(abstract_mode.Mode):
             #cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
             # place into display queue so another thread can handle
-            #self.display_queue.put('{:.2%}'.format(cpu_usage))
+            self.display_queue.put('{:.2%}'.format(cpu_usage))
 
             # get ready for next  iteration
             #utime_prev = utime_next

@@ -85,39 +85,43 @@ class RegurgitateMode(abstract_mode.Mode):
             cstime_next = float(stats[16])
             start_time = float(stats[21])
 
-            total_time = utime_next + stime_next
-            total_time += cutime_next + cstime
-            seconds = uptime - (start_time / HERTZ)
-            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+
             #HERE. 5:00pm, wednesday
             #hm jason took the differentials
 
 
-            if (cpu_total - prev_cpu):
-                percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))*100
-                self.display_queue.put('{:.2%}'.format(percent))
+            #ingnore this. was v2:
+            #if (cpu_total - prev_cpu):
+                #percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))*100
+                #self.display_queue.put('{:.2%}'.format(percent))
 
-            prev_proc = proctotal
-            prev_cpu = cpu_total
+            #prev_proc = proctotal
+            #prev_cpu = cpu_total
 
 
             # calculations
             time_next = sum(map(float, time_stats))
-            seconds = time_next - time_prev
+            #seconds = time_next - time_prev
 
-            #total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
-            #total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
+            #ignore?
+            #total_time = utime_next + stime_next
+            #total_time += cutime_next + cstime
+            seconds = uptime - (start_time / HERTZ)
             #cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+
+            total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
+            total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
+            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
             # place into display queue so another thread can handle
             self.display_queue.put('{:.2%}'.format(cpu_usage))
 
             # get ready for next  iteration
-            #utime_prev = utime_next
-            #stime_prev = stime_next
-            #cutime_prev = cutime_next
-            #cstime_prev = cstime_next
-            #time_prev = time_next
+            utime_prev = utime_next
+            stime_prev = stime_next
+            cutime_prev = cutime_next
+            cstime_prev = cstime_next
+            time_prev = time_next
 
     def _display_to_screen(self):
 

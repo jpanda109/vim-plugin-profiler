@@ -63,35 +63,65 @@ class RegurgitateMode(abstract_mode.Mode):
             for i in range(round(self.interval*10)):
                 time.sleep(0.1)
                 if prev != self.interval and prev > self.interval:
-                    break;
+                    break
 
             # get all the needed info
+            #with open(proc_file_name, 'r') as proc_file:
+            #    stats = proc_file.readline().split(' ')
+            #with open(time_file_name, 'r') as time_file:
+            #    time_stats = time_file.readline().split(' ')[2:]
+            #utime_next = float(stats[13])
+            #stime_next = float(stats[14])
+            #cutime_next = float(stats[15])
+            #cstime_next = float(stats[16])
+
+            proctotal = 0
+            cputotal = 0
+            cpu_total = 0 #the previous one is a temp var. rename later
             with open(proc_file_name, 'r') as proc_file:
-                stats = proc_file.readline().split(' ')
-            with open(time_file_name, 'r') as time_file:
-                time_stats = time_file.readline().split(' ')[2:]
-            utime_next = float(stats[13])
-            stime_next = float(stats[14])
-            cutime_next = float(stats[15])
-            cstime_next = float(stats[16])
+                proc_times = proc_file.readline()
+                u_time = proc_times.split(' ')[13]
+                s_time = proc_times.split(' ')[14]
+                proctotal = float(int(u_time) + int(s_time))
+
+            with open(time_file_name, 'r') as proc_file:
+                cpu_times = proc_file.readline()
+                for i in cpu_times.split(' ')[2:]:
+                    i = int(i)
+                    cputotal = (cputotal + i)
+                cpu_total = float(cputotal)
+
+            prev_proc = 0
+            prev_cpu = 0
+
+            proc = subprocess.Popen("top -p %s -b -n 1 | grep -w mysql | awk '{print $9}'"
+                %pid, shell=True, stdout = subprocess.PIPE)
+
+            if (cpu_total - prev_cpu):
+                percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))
+                self.display_queue.put('{:.2%}'.format(percent))
+
+            prev_proc = proctotal
+            prev_cpu = cpu_total
+
 
             # calculations
             time_next = sum(map(float, time_stats))
             seconds = time_next - time_prev
 
-            total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
-            total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
-            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+            #total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
+            #total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
+            #cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
             # place into display queue so another thread can handle
-            self.display_queue.put('{:.2%}'.format(cpu_usage))
+            #self.display_queue.put('{:.2%}'.format(cpu_usage))
 
             # get ready for next  iteration
-            utime_prev = utime_next
-            stime_prev = stime_next
-            cutime_prev = cutime_next
-            cstime_prev = cstime_next
-            time_prev = time_next
+            #utime_prev = utime_next
+            #stime_prev = stime_next
+            #cutime_prev = cutime_next
+            #cstime_prev = cstime_next
+            #time_prev = time_next
 
     def _display_to_screen(self):
 

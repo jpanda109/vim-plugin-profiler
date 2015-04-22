@@ -14,7 +14,8 @@ from ..modes import abstract_mode
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
-HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
+#HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
+HERTZ = sysconf(_SC_CLK_TCK)
 env_command = {
     'ubuntu': 'gnome-terminal',
     'xubuntu': 'xfce4-terminal'
@@ -55,40 +56,68 @@ class RegurgitateMode(abstract_mode.Mode):
         stime_prev = 0
         cutime_prev = 0
         cstime_prev = 0
+
+
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
-        time.sleep(self.interval)
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
+            prev = self.interval
 
             # get all the needed info
             with open(proc_file_name, 'r') as proc_file:
                 stats = proc_file.readline().split(' ')
             with open(time_file_name, 'r') as time_file:
-                time_stats = time_file.readline().split(' ')[2:]
+                time_stats = time_file.readline().split(' ')
+            uptime = time_stats[0]
+
+            #First, sleep for an interval.
+            #Looping increments to check interval change
+            for i in range(round(self.interval*10)):
+                time.sleep(0.1)
+                if prev != self.interval and prev > self.interval:
+                    break
+
+
             utime_next = float(stats[13])
             stime_next = float(stats[14])
             cutime_next = float(stats[15])
             cstime_next = float(stats[16])
+            start_time = float(stats[21])
 
-            # calcurations
+            total_time = utime_next + stime_next
+            total_time += cutime_next + cstime
+            seconds = uptime - (start_time / HERTZ)
+            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+            #HERE. 5:00pm, wednesday
+            #hm jason took the differentials
+
+
+            if (cpu_total - prev_cpu):
+                percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))*100
+                self.display_queue.put('{:.2%}'.format(percent))
+
+            prev_proc = proctotal
+            prev_cpu = cpu_total
+
+
+            # calculations
             time_next = sum(map(float, time_stats))
             seconds = time_next - time_prev
 
-            total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
-            total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
-            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+            #total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
+            #total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
+            #cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
             # place into display queue so another thread can handle
             self.display_queue.put('{:.2%}'.format(cpu_usage))
-            time.sleep(self.interval)
 
             # get ready for next  iteration
-            utime_prev = utime_next
-            stime_prev = stime_next
-            cutime_prev = cutime_next
-            cstime_prev = cstime_next
-            time_prev = time_next
+            #utime_prev = utime_next
+            #stime_prev = stime_next
+            #cutime_prev = cutime_next
+            #cstime_prev = cstime_next
+            #time_prev = time_next
 
     def _display_to_screen(self):
 
@@ -114,7 +143,7 @@ class RegurgitateMode(abstract_mode.Mode):
     def _load_commands(self):
 
         """
-        get commands from vim process through pipe, and act accordingly
+        get commands from vim process through pipe, puts it in display queue
         :return:
         """
 
@@ -131,9 +160,26 @@ class RegurgitateMode(abstract_mode.Mode):
                 if line.rstrip() == '':
                     continue
                 command = json.loads(line, encoding='utf-8')
-                self.display_queue.put(command)
                 c.execute('INSERT INTO commands VALUES (?,?)',
                           (command['time'], command['command']))
+
+                #sorry, i know this is disastrously inefficient
+                #i dont know python okay
+                str1 = str(command)
+                str2 = str1.replace("'command'", "Command Name", 1)
+                str3 = str2.replace("'time'", "Time", 1)
+                if str3[1] == "T":
+                    str4 = str3[:(str3.find("Time")+13)] + str3[str3.find(","):]
+                    #str4 = str3[str3.find(","):]
+                elif str3[1] == "C":
+                    str4 = str3[:(str3.find("Time")+13)]
+                else:
+                    str4 = " ERROR " 
+                my_list = list(str4)
+                my_list.pop()
+                my_list.pop(0)
+                str5 = "".join(my_list)
+                self.display_queue.put(str5)
         conn.commit()
         conn.close()
 
@@ -213,7 +259,7 @@ class RegurgitateMode(abstract_mode.Mode):
         for thread in self.threads:
             with self.screen_lock:
                 self.screen.clear()
-                self.screen.addstr(0, 0, 'cleaning up')
+                self.screen.addstr(0, 0, 'Cleaning up...')
                 self.screen.refresh()
             thread.join()
         try:
@@ -228,13 +274,14 @@ class RegurgitateMode(abstract_mode.Mode):
 
     def run(self):
 
-        """ main function for this mode
-        :return the mode that should be switched to
+        """
+        main function for this mode
+        :return: the mode that should be switched to
         """
 
         # display mode specific commands on line y - 2
         y, x = self.screen.getmaxyx()
-        commands = ['a: Analyze', 'o: Open', 'i: interval']
+        commands = ['a: Analyze', 'o: Open', 'i: Interval']
         prev_col = 0
         for i in range(len(commands)):
             col = 0 if i == 0 else len(commands[i - 1]) + 4
@@ -244,16 +291,16 @@ class RegurgitateMode(abstract_mode.Mode):
             prev_col = col
 
         # initialize threads and synchronization items
-        self.threads.append(threading.Thread(target=self._process_input,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._calculate_cpu,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._load_commands,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._display_to_screen,
-                                             daemon=True))
-        self.threads.append(threading.Thread(target=self._check_status,
-                                             daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._process_input, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._calculate_cpu, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._load_commands, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._display_to_screen, daemon=True))
+        self.threads.append(
+            threading.Thread(target=self._check_status, daemon=True))
         for thread in self.threads:
             thread.start()
 
@@ -286,9 +333,7 @@ class RegurgitateMode(abstract_mode.Mode):
         vim_command = ('vim -S %r -c %r' % (plugin_file, startup_command))
 
         # send command to open up new process, wait for command process to die
-        # before getting the pid of the actual vim process (this is like a
-        # super jank way of doing it but oh well (no i'm not closing these
-        # parentheses
+        # before getting the pid of the actual vim process
         args = [env_command[desktop_env], '-e', vim_command]
         proc = subprocess.Popen(args).pid
         os.waitid(os.P_PID, int(proc), os.WEXITED)

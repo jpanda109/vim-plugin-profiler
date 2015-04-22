@@ -17,7 +17,8 @@ class Mode(object):
         constructor for any mode
         :param screen: curses screen that this mode is operating on
         :param working_path: working path of original main.py
-        :param screen_lock: a lock that controls access to the screen, should be used any time cursor might be used
+        :param screen_lock: a lock that controls access to the screen,
+        should be used any time cursor might be used
         :return:
         """
 

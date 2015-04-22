@@ -4,6 +4,9 @@ Matt Lee: leeml2
 //=================================================
 Project Description:
 //=================================================
+
+ORIGINAL:
+
 Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
 JK might not be feasible as a realtime debugger, but we can still make
@@ -35,16 +38,23 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
-UPDATE:
-    project now seeks to update on start times and their correlation to specific
-    vim plugins. WIll also report on CPU usage/memory and suggest correlation there.
+UPDATE: (Email sent to Otte)
 
-    allow user to chose what plugins to analyze, which will then have vim run with
-    and without said plugin and analyze delta(time)
+Our current plugin does the following:
+1. Live monitors CPU usage and vim functions (ie. exit buffer) to look for
+    correlations between high CPU usage and certain function calls
+2. Analyzes vim startup times with and without loading certain plugins to look
+for slow plugins (ie. YouCompleteMe slow down vim startup a lot compared to supertab)
+3. Analyze total time spent using function calls after an instance of vim closes
 
-    can also (hopefully) run multiple plugins in conjunction to test if running
-    particular plugins result in conflicts and slows down time further
+We use named pipes to send information to and from our main function; other
+threads are responsible for things like listening to vim and reporting back on
+commands, and we use an exec equivalent to start vim instances along with signal
+handling to kill children.
 
+The main change from the original plan is that we didn't tap into actual vim
+plugin calss (like tabcompleter's searching function), but instead included startup
+time analysis.
 
 //=================================================
 Error Conditions:

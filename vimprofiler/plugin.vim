@@ -1,4 +1,4 @@
-function! VPLogInfo(command)
+function! VPLogInfo(command,start_time)
     let s:current_file=expand('<sfile>:p:h')
     let s:pyscript = s:current_file . "/plugin/log_info.py"
     execute 'pyfile ' . s:pyscript

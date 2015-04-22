@@ -200,7 +200,8 @@ class StartupMode(abstract_mode.Mode):
                     source_times.append(line)
 
             # sort and place info into analysis queue
-            source_times.sort(key=lambda s_line: float(s_line.split(' ')[2]))
+            source_times.sort(key=lambda s_line: float(s_line.split(' ')[2]),
+                              reverse=True)
             source_times.insert(0, total_elapsed_time)
             self.analysis_queue.put(source_times)
             self.analysis_event.set()

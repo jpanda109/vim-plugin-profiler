@@ -94,11 +94,14 @@ class RegurgitateMode(abstract_mode.Mode):
             prev_proc = 0
             prev_cpu = 0
 
-            proc = subprocess.Popen("top -p %s -b -n 1 | grep -w mysql | awk '{print $9}'"
-                %pid, shell=True, stdout = subprocess.PIPE)
+            #pid = str(os.getpid())
+            #proc = subprocess.Popen("top -p %s -b -n 1 | grep -w mysql | awk '{print $9}'"
+            #    %pid, shell=True, stdout = subprocess.PIPE)
+            #top_percent = proc.communicate()
+            #self.display_queue.put('top reports: %s' %(top_percent[0].rstrip('\n')))
 
             if (cpu_total - prev_cpu):
-                percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))
+                percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))*100
                 self.display_queue.put('{:.2%}'.format(percent))
 
             prev_proc = proctotal

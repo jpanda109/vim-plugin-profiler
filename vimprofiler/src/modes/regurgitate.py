@@ -89,7 +89,7 @@ class RegurgitateMode(abstract_mode.Mode):
 
             total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
             total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
-            cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+            cpu_usage = ((total_time / HERTZ) / seconds)
 
             # place into display queue
             # (Single display queue used for all regurgitation

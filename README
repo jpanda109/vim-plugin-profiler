@@ -51,6 +51,15 @@ plugin calss (like tabcompleter's searching function), but instead included star
 time analysis.
 
 //=================================================
+Building:
+//=================================================
+1. Use Ubuntu. Please.
+2. Have vim running with Vundle
+3. Run from vimprofiler, our project directory.
+4. Run: python3 main.py
+
+
+//=================================================
 Error Conditions:
 //=================================================
 Possible race conditions between threads

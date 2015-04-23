@@ -73,7 +73,7 @@ class RegurgitateMode(abstract_mode.Mode):
             with open(proc_file_name, 'r') as proc_file:
                 stats = proc_file.readline().split(' ')
             with open(time_file_name, 'r') as time_file:
-                time_stats = time_file.readline().split(' ')
+                time_stats = time_file.readline().split(' ')[2:]
 
             #uptime = time_stats[0]
 

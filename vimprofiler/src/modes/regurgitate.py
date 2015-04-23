@@ -15,7 +15,11 @@ from ..modes import abstract_mode
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
-#HERTZ = sysconf(_SC_CLK_TCK)
+#subprocess.checkout
+#grep 'CONFIG_HZ=' /boot/config-$(uname -r)
+
+
+
 env_command = {
     'ubuntu': 'gnome-terminal',
     'xubuntu': 'xfce4-terminal'

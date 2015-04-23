@@ -57,7 +57,6 @@ class RegurgitateMode(abstract_mode.Mode):
         cutime_prev = 0
         cstime_prev = 0
 
-
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float, time_stats))
@@ -158,7 +157,7 @@ class RegurgitateMode(abstract_mode.Mode):
                 elif str3[1] == "C":
                     str4 = str3[:(str3.find("Time")+13)]
                 else:
-                    str4 = " ERROR " 
+                    str4 = " ERROR "
                 my_list = list(str4)
                 my_list.pop()
                 my_list.pop(0)

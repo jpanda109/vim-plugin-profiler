@@ -14,8 +14,8 @@ from ..modes import abstract_mode
 
 
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
-#HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
-HERTZ = sysconf(_SC_CLK_TCK)
+HERTZ = 250  # Clock Hertz of computer (shouldn't hard code but whatev)
+#HERTZ = sysconf(_SC_CLK_TCK)
 env_command = {
     'ubuntu': 'gnome-terminal',
     'xubuntu': 'xfce4-terminal'
@@ -71,13 +71,12 @@ class RegurgitateMode(abstract_mode.Mode):
                 time_stats = time_file.readline().split(' ')
             uptime = time_stats[0]
 
-            #First, sleep for an interval.
-            #Looping increments to check interval change
+            #First, sleep.
+            #Looping because interval "live" updates
             for i in range(round(self.interval*10)):
                 time.sleep(0.1)
                 if prev != self.interval and prev > self.interval:
                     break
-
 
             utime_next = float(stats[13])
             stime_next = float(stats[14])
@@ -85,35 +84,16 @@ class RegurgitateMode(abstract_mode.Mode):
             cstime_next = float(stats[16])
             start_time = float(stats[21])
 
-
-            #HERE. 5:00pm, wednesday
-            #hm jason took the differentials
-
-
-            #ingnore this. was v2:
-            #if (cpu_total - prev_cpu):
-                #percent = ((proctotal - prev_proc) / (cpu_total - prev_cpu))*100
-                #self.display_queue.put('{:.2%}'.format(percent))
-
-            #prev_proc = proctotal
-            #prev_cpu = cpu_total
-
-
-            # calculations
+            #Calculations
             time_next = sum(map(float, time_stats))
-            #seconds = time_next - time_prev
-
-            #ignore?
-            #total_time = utime_next + stime_next
-            #total_time += cutime_next + cstime
-            seconds = uptime - (start_time / HERTZ)
-            #cpu_usage = 100 * ((total_time / HERTZ) / seconds)
+            seconds = time_next - time_prev
 
             total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
             total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
             cpu_usage = 100 * ((total_time / HERTZ) / seconds)
 
-            # place into display queue so another thread can handle
+            # place into display queue
+            # (Single display queue used for all regurgitation
             self.display_queue.put('{:.2%}'.format(cpu_usage))
 
             # get ready for next  iteration

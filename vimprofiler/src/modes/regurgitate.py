@@ -62,14 +62,6 @@ class RegurgitateMode(abstract_mode.Mode):
         time_prev = sum(map(float, time_stats))
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
             prev = self.interval
-
-            # get all the needed info
-            with open(proc_file_name, 'r') as proc_file:
-                stats = proc_file.readline().split(' ')
-            with open(time_file_name, 'r') as time_file:
-                time_stats = time_file.readline().split(' ')
-            uptime = time_stats[0]
-
             #First, sleep.
             #Looping because interval "live" updates
             for i in range(round(self.interval*10)):
@@ -77,11 +69,19 @@ class RegurgitateMode(abstract_mode.Mode):
                 if prev != self.interval and prev > self.interval:
                     break
 
+            # get all the needed info
+            with open(proc_file_name, 'r') as proc_file:
+                stats = proc_file.readline().split(' ')
+            with open(time_file_name, 'r') as time_file:
+                time_stats = time_file.readline().split(' ')
+
+            #uptime = time_stats[0]
+
             utime_next = float(stats[13])
             stime_next = float(stats[14])
             cutime_next = float(stats[15])
             cstime_next = float(stats[16])
-            start_time = float(stats[21])
+            #start_time = float(stats[21])
 
             #Calculations
             time_next = sum(map(float, time_stats))

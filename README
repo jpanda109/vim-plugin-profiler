@@ -11,14 +11,8 @@ Vim plugin to moniter various system resources used by vim plugins in order
 to effectively debug or determine the root of slowdowns, etc.
 JK might not be feasible as a realtime debugger, but we can still make
 a nifty usage statistics program along with some added profiling at the end
----  this was a "beta" architecture, keeping for now but will delete later
 
-A main process will handle sending out workers to collect data from the various
-processes spawned by the vim plugins, and sending them through a message queue
-so that another process can then analyze and output the data, possibly using
-some sort of graph utility such as gnuplot
----
-Real Architecture:
+Architecture:
 Run vim within a sandbox (much like valgrind) in order to load in the proper
     scripts and functions. The main process will first use a seperate thread to
     gather --startup information and display it somewhere (possibly within

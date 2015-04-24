@@ -47,55 +47,53 @@ class RegurgitateMode(abstract_mode.Mode):
 
     def _calculate_cpu(self):
 
-        """ calculate_cpu and send to display_queue
-        """
+        """ calculate_cpu and send to display_queue """
 
-        proc_file_name = '/proc/' + str(os.getpid()) + '/stat'
-        time_file_name = '/proc/stat'
-        utime_prev = 0
-        stime_prev = 0
-        cutime_prev = 0
-        cstime_prev = 0
+        pid_file_name = '/proc/' + str(os.getpid()) + '/stat'
+        cpu_file_name = '/proc/stat'
+
+        utime_prev =0
+        stime_prev =0
+        cutime_prev =0
+        cstime_prev =0
 
         with open(time_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
-        time_prev = sum(map(float, time_stats))
+        time_prev = sum(map(float,time_stats))
+
         while not self.exit_event.is_set() and not self.vim_quit_event.is_set():
             prev = self.interval
             #First, sleep.
-            #Looping because interval "live" updates
+            #Looping every 0.1s so that interval updates quickly when changed
             for i in range(round(self.interval*10)):
                 time.sleep(0.1)
                 if prev != self.interval and prev > self.interval:
                     break
 
             # get all the needed info
-            with open(proc_file_name, 'r') as proc_file:
-                stats = proc_file.readline().split(' ')
-            with open(time_file_name, 'r') as time_file:
-                time_stats = time_file.readline().split(' ')[2:]
-
-            #uptime = time_stats[0]
+            with open(pid_file_name, 'r') as pid_file:
+                stats = pid_file.readline().split(' ')
+            with open(cpu_file_name, 'r') as cpu_file:
+                time_stats = cpu_file.readline().split(' ')[2:]
 
             utime_next = float(stats[13])
             stime_next = float(stats[14])
             cutime_next = float(stats[15])
             cstime_next = float(stats[16])
-            #start_time = float(stats[21])
 
             #Calculations
-            time_next = sum(map(float, time_stats))
+            time_next = sum(map(float,time_stats))
             seconds = time_next - time_prev
 
             total_time = (utime_next - utime_prev) + (stime_next - stime_prev)
             total_time += (cutime_next - cutime_prev) + (cstime_next - cstime_prev)
             cpu_usage = ((total_time / HERTZ) / seconds)
 
-            # place into display queue
-            # (Single display queue used for all regurgitation
+            # Place into display queue
+            # (Single display queue used for all output)
             self.display_queue.put('{:.2%}'.format(cpu_usage))
 
-            # get ready for next  iteration
+            # Set values for next  iteration
             utime_prev = utime_next
             stime_prev = stime_next
             cutime_prev = cutime_next
@@ -146,8 +144,8 @@ class RegurgitateMode(abstract_mode.Mode):
                 c.execute('INSERT INTO commands VALUES (?,?)',
                           (command['time'], command['command']))
 
-                #sorry, i know this is disastrously inefficient
-                #i dont know python okay
+                #Modifies the dict. string to make it presentable
+                #Sorry for the inefficient parsing.
                 str1 = str(command)
                 str2 = str1.replace("'command'", "Command Name", 1)
                 str3 = str2.replace("'time'", "Time", 1)
@@ -159,10 +157,12 @@ class RegurgitateMode(abstract_mode.Mode):
                 else:
                     str4 = " ERROR "
                 my_list = list(str4)
+                #gets rid of brackets
                 my_list.pop()
                 my_list.pop(0)
                 str5 = "".join(my_list)
                 self.display_queue.put(str5)
+
         conn.commit()
         conn.close()
 
@@ -182,7 +182,9 @@ class RegurgitateMode(abstract_mode.Mode):
     def _analyze_profile(self):
 
         """
-        analyzes top 10 or so function calls, sorted by total time spent on each function call
+        Analyzes top function calls, sorted by total time spent on each function call
+        This is where users can determine time cost of various functions throughout
+        and instance of vim
         :return:
         """
 
@@ -208,7 +210,7 @@ class RegurgitateMode(abstract_mode.Mode):
     def _process_input(self):
 
         """
-        thread that gets input from screen and acts accordingly
+        Thread that takes input from screen and responds accordingly
         :return:
         """
 
@@ -235,7 +237,7 @@ class RegurgitateMode(abstract_mode.Mode):
     def _exit_mode(self):
 
         """
-        gracefully clean up everything this mode was doing
+        Gracefully clean up everything this mode was doing
         :return:
         """
 
@@ -258,7 +260,7 @@ class RegurgitateMode(abstract_mode.Mode):
     def run(self):
 
         """
-        main function for this mode
+        Main function for this mode
         :return: the mode that should be switched to
         """
 
@@ -302,20 +304,20 @@ class RegurgitateMode(abstract_mode.Mode):
         :return: pid of vim process
         """
 
-        # file initializations relative to working paths
+        # File initializations relative to working paths
         plugin_file = os.path.join(working_path, 'plugin.vim')
 
-        # lay em with the pipe
+        # Make our pipe.
         utils.remove_file(pipe_name)
         os.mkfifo(pipe_name)
 
-        # create the vim command that opens up vim instance in new terminal
+        # Create the vim command that opens up vim instance in new terminal
         # with proper settings, etc.
         profile_path = os.path.join(working_path, 'profile.log')
         startup_command = 'call AutoLogInfo() | profile start ' + profile_path + ' | profile func * | profile file *'
         vim_command = ('vim -S %r -c %r' % (plugin_file, startup_command))
 
-        # send command to open up new process, wait for command process to die
+        # Send command to open up new process, wait for command process to die
         # before getting the pid of the actual vim process
         args = [env_command[desktop_env], '-e', vim_command]
         proc = subprocess.Popen(args).pid

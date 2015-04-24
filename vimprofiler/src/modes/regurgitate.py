@@ -61,7 +61,7 @@ class RegurgitateMode(abstract_mode.Mode):
         cutime_prev =0
         cstime_prev =0
 
-        with open(time_file_name, 'r') as time_file:
+        with open(cpu_file_name, 'r') as time_file:
             time_stats = time_file.readline().split(' ')[2:]
         time_prev = sum(map(float,time_stats))
 

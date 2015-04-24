@@ -1,13 +1,17 @@
 import abc
 import logging
 
+# This class just acts as a base class for our modes, and any potential future
+# options.
+# Currently regurgitate.py (CPU % / Vim Command mode) and Startup Time mode
+# use this.
+
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
 
 
 class Mode(object):
 
-    """ Abstract base class for different modes
-    """
+    """ Abstract base class for different modes """
 
     __metaclass__ = abc.ABCMeta
 

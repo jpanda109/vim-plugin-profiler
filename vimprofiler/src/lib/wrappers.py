@@ -1,6 +1,7 @@
 import functools
 import traceback
 
+#Wrappers for our own use within this app
 
 def safe_exc(f):
 

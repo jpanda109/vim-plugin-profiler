@@ -5,12 +5,14 @@ Matt Lee: leeml2
 Project Description:
 //=================================================
 
-ORIGINAL:
 
-Vim plugin to moniter various system resources used by vim plugins in order
-to effectively debug or determine the root of slowdowns, etc.
-JK might not be feasible as a realtime debugger, but we can still make
-a nifty usage statistics program along with some added profiling at the end
+Vim Plugin tool.
+    - Used to determine what plugins, if any, are significantly affecting the
+      speed of vim.
+    - Runs and analyzes vim/ vim plugin function calls next to CPU usage and
+      reports back on total cost of certain function calls
+    - Starts vim with and without specified plugins and reports back on
+      startup time differences to identify particularly expensive plugins
 
 Architecture:
 Run vim within a sandbox (much like valgrind) in order to load in the proper
@@ -32,7 +34,7 @@ Run vim within a sandbox (much like valgrind) in order to load in the proper
     through even when intense (super intense) calculations are being done.
 
 
-UPDATE: (Email sent to Otte)
+UPDATED PROJECT DESCRIPTION: (Email sent to Otte)
 
 Our current plugin does the following:
 1. Live monitors CPU usage and vim functions (ie. exit buffer) to look for
@@ -46,9 +48,18 @@ threads are responsible for things like listening to vim and reporting back on
 commands, and we use an exec equivalent to start vim instances along with signal
 handling to kill children.
 
-The main change from the original plan is that we didn't tap into actual vim
-plugin calss (like tabcompleter's searching function), but instead included startup
-time analysis.
+
+//=================================================
+Build Instructions:
+//=================================================
+1. Currently only tested in Ubuntu/Xubuntu
+
+2. Run an instance of vim with vundle managing your plugins.
+
+3. in CS281-Final/vimprofiler,
+    - run the following: "python3 main.py"
+
+4. Options are as listed
 
 //=================================================
 Error Conditions:

@@ -9,7 +9,7 @@ from .lib import wrappers
 @wrappers.safe_exc
 def main(screen, working_path):
 
-    """ handles mode switching """
+    """ Handles mode switching """
 
     y, x = screen.getmaxyx()
     commands = ['q: Quit', '1: Regurgitate', '2: Startup']
@@ -19,7 +19,7 @@ def main(screen, working_path):
 
     while next_mode != 0:
 
-        # print the base commands (quit and modes)
+        # Print the command options
         screen.clear()
         prev_col = 0
         for i in range(len(commands)):
@@ -28,11 +28,12 @@ def main(screen, working_path):
             screen.addstr(y - 2, col, commands[i])
             prev_col = col
 
-        # switch modes
+        # Switch modes
         if next_mode == 1:
             mode = regurgitate.RegurgitateMode(screen, working_path, screen_lock)
         elif next_mode == 2:
             mode = startup.StartupMode(screen, working_path, screen_lock)
         else:
             mode = regurgitate.RegurgitateMode(screen, working_path, screen_lock)
+
         next_mode = mode.run()

@@ -6,11 +6,14 @@ import os
 import subprocess
 
 from ..modes import abstract_mode
-
 from ..lib import utils
-
-
 logging.basicConfig(filename='logging_stuff.log', level=logging.DEBUG)
+
+# Startup Time Mode
+# This mode runs vim in a sandbox with and without certain options,
+# and reports back on how long it took vim to start up.
+# Allows toggling of plugins to test time cost.
+# Note: Assumes user is using Vundle to manage plugins.
 
 
 class StartupMode(abstract_mode.Mode):
@@ -75,7 +78,7 @@ class StartupMode(abstract_mode.Mode):
         """
 
         y, x = self.screen.getmaxyx()
-        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: iterations', 'p: path']
+        commands = ['j: Down', 'k: Up', 'c: Toggle', 's: Simulate', 'i: Iterations', 'p: Path']
         prev_col = 0
         with self.screen_lock:
             for i in range(len(commands)):
@@ -100,8 +103,6 @@ class StartupMode(abstract_mode.Mode):
                 with self.screen_lock:
                     self.screen.addstr(self.selected_line, 0, new_text, curses.A_STANDOUT)
                 self.screen.refresh()
-                # self.screen.noutrefresh()
-                # curses.doupdate()
                 self.change_event.clear()
             if self.analysis_event.is_set():
                 # deal with startup analysis requests
